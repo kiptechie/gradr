@@ -476,9 +476,6 @@ const handleSpecialKeyCombinations = () => {
     if (event.ctrlKey && key === 13) {
       playCode();
     }
-
-    // TODO disable Ctrl + S
-    // TODO disable Ctrl + V & Ctrl + C
   });
 };
 
@@ -491,6 +488,10 @@ const proceed = async (project) => {
   device = viewer;
   editor = codeEditor;
   editor.setValue(code);
+
+  editor.on("beforeChange", (_, change) => {
+    if (change.origin === 'paste') change.cancel();
+  });
   editor.refresh();
 
   instructions = select('#instructions');
