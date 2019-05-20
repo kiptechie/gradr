@@ -121,7 +121,7 @@ const showCountdown = () => {
 
 const createProject = async (email) => {
   // TODO get this from the SPEC
-  const response = await fetch('/engines/todo/start.html');
+  const response = await fetch('/engines/tpl/start.html');
   const code = response.text();
   const entry = {
     email,
@@ -131,7 +131,7 @@ const createProject = async (email) => {
   };
 
   const ref = await SUBMISSIONS.add(entry);
-  return await SUBMISSIONS.doc(ref.id).get();  
+  return SUBMISSIONS.doc(ref.id);  
 };
 
 const updateLastSeenTime = async ([project]) => {
@@ -140,9 +140,8 @@ const updateLastSeenTime = async ([project]) => {
     lastSeen: Date.now()
   };
 
-  // await SUBMISSIONS.doc(id).update(entry);
   await updateProjectWork(entry);
-  return await SUBMISSIONS.doc(projectId).get();
+  return SUBMISSIONS.doc(projectId);
 };
 
 const createOrUpdateProject = async () =>  {
@@ -173,7 +172,7 @@ const setupInstructions = async (challengeIndex) => {
     let assessmentName = assessment.name || 'Andela Fellowship';
     assessmentName = assessmentName.replace(/\s+\w+-\d{2,}$/, '');
 
-    const response = await fetch(`/engines/todo/intro.md`);
+    const response = await fetch(`/engines/tpl/intro.md`);
     const text = await response.text();
     return text
       .replace('{name}', appUser.displayName || '')
@@ -185,7 +184,7 @@ const setupInstructions = async (challengeIndex) => {
   }
 
   if (challengeIndex >= spec.challenges.length) {
-    const response = await fetch(`/engines/todo/outro.md`);
+    const response = await fetch(`/engines/tpl/outro.md`);
     const text = await response.text();
     return text.replace('{name}', appUser.displayName || '');
   }
@@ -389,18 +388,11 @@ const setTheStage = async (challengeIndex, started) => {
   });
 
   notify('building your auto-grader ...');
-  let sandbox = document.createElement('iframe');
-  sandbox = setAttrs(sandbox, {
-    id: 'sandbox',
-    frameborder: 0,
-    src: '/engines/sandbox.html',
-    sandbox: 'allow-same-origin allow-scripts'
-  });
 
+  const sandbox = select('#sandbox');
   const viewer = select('#viewer');
-  const screen = select('#viewer .screen');
-  screen.appendChild(sandbox);
-  sandboxWindow = select('#sandbox').contentWindow;
+  sandbox.setAttribute('src', '/engines/sandbox.html');
+  sandboxWindow = sandbox.contentWindow;
 
   if (challengeIndex >= 0 && started) {
     select('body').setAttribute('data-assessment', started);
@@ -496,6 +488,8 @@ const proceed = async (project) => {
 
   instructions = select('#instructions');
   rAF({ wait: 500 }).then(() => showCountdown());
+  window.addEventListener('message', handleSandboxMessages);
+  handleSpecialKeyCombinations();
 
   if (whereAmI === -1) {
     challengeIntro();
@@ -516,8 +510,6 @@ const proceed = async (project) => {
     playCode();
   }
 
-  window.addEventListener('message', handleSandboxMessages);
-  handleSpecialKeyCombinations();
 };
 
 const deferredEnter = async (args) => {
@@ -530,11 +522,14 @@ const deferredEnter = async (args) => {
     ...assessmentDoc.data()
   };
 
-  const project = await createOrUpdateProject();
+  const projectRef = await createOrUpdateProject();
+  const project = await projectRef.get();
   projectId = project.id;
 
   goTo('playground', { test });
-  proceed(project.data());
+
+  const data = project.data();
+  proceed(data);
 };
 
 export const enter = (args = {}) => {
