@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "alc-dev-toolkit-d50fe"
+  },
+  "targets": {
+    "alc-dev-toolkit-d50fe": {
+      "hosting": {
+        "admin": [
+          "gradr-admin"
+        ],
+        "playground": [
+          "alc-dev-toolkit-d50fe"
+        ]
+      }
+    }
+  }
+}
