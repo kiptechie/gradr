@@ -13,7 +13,8 @@ import {
   toSlug,
   trim,
   exceptId,
-  dateTimeDiff
+  dateTimeDiff,
+  selectAll
 } from "../../commons/js/utils.js";
 
 let chart;
@@ -472,6 +473,7 @@ const attemptDisplayAssessmentAdminUI = () => {
     );
 
     computePerformanceMatrix();
+    select(`[data-candidate-perfs] select`).focus();
   });
 };
 
@@ -608,9 +610,9 @@ const manageATest = event => {
       [
         select("#testname-io"),
         select("#testcycle-io"),
-        select("#select-spec select"),
         select("#from-date"),
-        select("#to-date")
+        select("#to-date"),
+        select("#select-spec select")
       ].forEach(field => {
         const key = field.getAttribute("data-field");
         if (key && assessment[key]) {
@@ -677,6 +679,10 @@ export const adminWillViewTests = () => {
     .catch(console.warn);
 
   goTo("assessments", {}, "!#assessments");
+
+  [...selectAll('.mdc-chip-set')].forEach(chip => {
+    mdc.chips.MDCChip.attachTo(chip);
+  });
   select("[data-action=add-test]").addEventListener(
     "click",
     adminWillCreateTest

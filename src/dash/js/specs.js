@@ -4,6 +4,7 @@ import { html, render } from "lit-html";
 
 import {
   select,
+  selectAll,
   goTo,
   rAF,
   toSlug,
@@ -174,15 +175,17 @@ const buildUI = mode => {
   challengeList.singleSelection = true;
   challengeList.listElements.map(listItemEl => new MDCRipple(listItemEl));
 
-  select(`[data-action='add-challenge']`).addEventListener(
-    "click",
-    addAChallenge
-  );
-
-  select(`[data-action='save-challenge']`).addEventListener(
-    "click",
-    saveAChallenge
-  );
+  rAF({wait: 1500}).then(() => {
+    select(`[data-action='add-challenge']`).addEventListener(
+      "click",
+      addAChallenge
+    );
+  
+    select(`[data-action='save-challenge']`).addEventListener(
+      "click",
+      saveAChallenge
+    );
+  });
 
   saveSpecBtn.addEventListener("click", () => {
     saveSpec(spec).then(updated => {
@@ -290,6 +293,10 @@ export const adminWillViewSpecs = () => {
     .catch(console.warn);
 
   goTo("specs");
+
+  [...selectAll('.mdc-chip-set')].forEach(chip => {
+    mdc.chips.MDCChip.attachTo(chip);
+  });
   select("[data-action=add-spec]").addEventListener(
     "click",
     adminWillCreateSpec
