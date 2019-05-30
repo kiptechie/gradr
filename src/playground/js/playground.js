@@ -9,9 +9,9 @@ import {
   goTo,
   select,
   selectAll,
-  setAttrs,
   countDown,
   extractCode,
+  dateTimeDiff,
   isWithinDeadline,
   loadCodemirrorAssets
 } from '../../commons/js/utils.js';
@@ -95,34 +95,42 @@ const switchPreviewToInstructions = () => {
   select('#toggle-viewer').classList.remove('mdc-icon-button--on');
 };
 
-const showCountdown = () => {
-  if(typeof Intl.RelativeTimeFormat === 'function') {
-    const timerEl = select(`[data-timer]`);
+const showCountdown = async () => {
+  if (!('RelativeTimeFormat' in Intl)) {
+    await import('intl-relative-time-format');
+    
     const { endingAt } = assessment;
-
     const deadline = new Date(`${endingAt}`);
-    const diffType = 'hour';
 
-    const displayCountdown = (diff) => {
-      const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-      const howfar = rtf.format(diff, diffType);
+    const timeSplainer = select(`[data-timer]`);
+    const timer = timeSplainer.querySelector('span');
+    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
-      timerEl.querySelector('span').textContent = howfar;
-      timerEl.setAttribute('data-timer-on', 'why-not');
+    const displayCountdown = ({ diff, diffType }) => {
+      if (diff < 0 && diffType === 'second') {
+        let type = 'hour';
+        let ellapsedDiff = dateTimeDiff({ to: deadline, type });
+
+        if(ellapsedDiff > 24) {
+          type = 'day'
+          ellapsedDiff = dateTimeDiff({ to: deadline, type });
+        }
+
+        timer.textContent = rtf.format(ellapsedDiff, type);
+        return;
+      }
+      timer.textContent = rtf.format(diff, `${diffType}`);
+      timeSplainer.setAttribute('data-timer-on', 'why-not');
     };
-
-    countDown({
-      to: deadline,
-      type: diffType,
-      callback: displayCountdown
-    });
+  
+    countDown({ to: deadline, callback: displayCountdown });
   }
 };
 
 const createProject = async (email) => {
   // TODO get this from the SPEC
   const response = await fetch('/engines/tpl/start.html');
-  const code = response.text();
+  const code = await response.text();
   const entry = {
     email,
     code,
@@ -131,40 +139,37 @@ const createProject = async (email) => {
   };
 
   const ref = await SUBMISSIONS.add(entry);
-  return SUBMISSIONS.doc(ref.id);  
+  projectId = ref.id;
+  return await SUBMISSIONS.doc(projectId).get();  
 };
 
-const updateLastSeenTime = async ([project]) => {
+const updateLastSeenTime = async (project) => {
   projectId = project.id;
   const entry = {
     lastSeen: Date.now()
   };
 
   await updateProjectWork(entry);
-  return SUBMISSIONS.doc(projectId);
+  return await SUBMISSIONS.doc(projectId).get();
 };
 
 const createOrUpdateProject = async () =>  {
     const { email } = appUser;
     const query = SUBMISSIONS
       .where('assessment', '==', testId)
-      .where('email', '==', email)
+      .where('email', '==', email);
     
     const snapshot = await query.get();
-    const projects = [];
-    snapshot.forEach(doc => {
-      projects.push({
-        id: doc.id,
-        data: doc.data()
-      });
-    });
-
-    if (projects.length === 0) {
+    if(snapshot.empty === true) {
       notify('Initialising your assessment, please wait ...');
       return await createProject(email);
-    }
+    } 
 
-    return await updateLastSeenTime(projects);
+    const [doc] = snapshot.docs;
+    return await updateLastSeenTime({
+      id: doc.id, 
+      data: doc.data()
+    });
 };
 
 const setupInstructions = async (challengeIndex) => {
@@ -220,7 +225,7 @@ const navigateToChallengeInstructions = async (challengeIndex) => {
         ? 'Mini App!'
         : `Challenge ${normalised} of ${challengeLen}`;
 
-    if(normalised >= challengeLen) {
+    if(normalised > challengeLen) {
       progress.textContent = `You've Completed ${progress.textContent}`
     }
   }
@@ -242,7 +247,7 @@ const displayProgressAndInstructions = async (challengeIndex) => {
     Array.from(selectAll(`button[data-challange-step]`))
     .map(btn => {
       if(btn) {
-        btn.setAttribute('disabled', 'disabled');
+        // btn.setAttribute('disabled', 'disabled');
         btn.removeAttribute('data-challange-status');
         btn.removeAttribute('data-challange-audit');
       }
@@ -305,19 +310,21 @@ const initProject = async () => {
   
   progressTo(challengeIndex);
   notify(`Yo, you can now begin the assessment. Take it away ${appUser.displayName.split(/\s+/)[0]}!`);
-  rAF({ wait: 2000 }).then(() => {
+  rAF({ wait: 500 }).then(() => {
     select('body').classList.remove('mdc-dialog-scroll-lock', 'mdc-dialog--open');
   });
 };
 
 const challengeIntro = async () => {
-  await getAssessmentSpec();
   select('button.action-begin').addEventListener('click', (event) => {
     select('body').classList.add('mdc-dialog-scroll-lock', 'mdc-dialog--open');
-    notify(`Thats right ${appUser.displayName}! Please wait while we start things off for you ...`);
+
+    const aName = appUser.displayName.split(/\s+/);
+    notify(`Thats right ${aName[0]}! Please wait while we start things off for you ...`);
     initProject();
   });
 
+  await getAssessmentSpec();
   displayProgressAndInstructions(-1);
   switchPreviewToInstructions();
 };
@@ -346,7 +353,7 @@ const playCode = () => {
 
 const handleChallengeNavClicks = (event) => {
   event.preventDefault();
-
+  
   const target = event.target.closest('button');
   const isActive = target.getAttribute('data-challange-status') === 'active'
   const isPassing = target.getAttribute('data-challange-audit') === 'passing'
@@ -370,12 +377,10 @@ const setTheStage = async (challengeIndex, started) => {
     playCode();
   });
 
-  selectAll(`[data-challange-step]`).forEach(btn => {
-    if(btn) {
-      btn.addEventListener('click', handleChallengeNavClicks);
-      const btnRipple = mdc.ripple.MDCRipple.attachTo(btn);
-      btnRipple.unbounded = true;
-    }
+  Array.from(selectAll(`button[data-challange-step]`)).forEach(btn => {
+    btn.addEventListener('click', handleChallengeNavClicks);
+    const btnRipple = mdc.ripple.MDCRipple.attachTo(btn);
+    btnRipple.unbounded = true;
   });
 
   const toggleViewer = new mdc.iconButton.MDCIconButtonToggle(select('#toggle-viewer'));
@@ -481,9 +486,9 @@ const proceed = async (project) => {
   editor = codeEditor;
   editor.setValue(code);
 
-  editor.on("beforeChange", (_, change) => {
-    if (change.origin === 'paste') change.cancel();
-  });
+  // editor.on("beforeChange", (_, change) => {
+  //   if (change.origin === 'paste') change.cancel();
+  // });
   editor.refresh();
 
   instructions = select('#instructions');
@@ -522,18 +527,14 @@ const deferredEnter = async (args) => {
     ...assessmentDoc.data()
   };
 
-  const projectRef = await createOrUpdateProject();
-  const project = await projectRef.get();
-  projectId = project.id;
-
   goTo('playground', { test });
 
-  const data = project.data();
-  proceed(data);
+  const project = await createOrUpdateProject();
+  proceed(project.data());
 };
 
-export const enter = (args = {}) => {
-  notify('Setting your playground, please wait ...');
+export const enter = async (args = {}) => {
+  notify('Building your playground, please wait ...');
   deferredEnter(args);
 
   // SUBMISSIONS
@@ -541,16 +542,12 @@ export const enter = (args = {}) => {
   //   .where('assessment', '==', 'ftvOCDuoSB29i8y69lAZ')
   //   .get()
   //   .then(snapshot => {
-  //     if(snapshot.size >= 1) {
-  //       snapshot.docs.forEach(doc => {
-  //         SUBMISSIONS.doc(doc.id).delete().then(() => {
-  //           console.log('deleted chaluwa entry');
-  //           deferredEnter(args);
-  //         });
+  //     if(snapshot.empty === false) {
+  //       const [doc] = snapshot.docs;
+  //       SUBMISSIONS.doc(doc.id).delete().then(() => {
+  //         console.log('deleted chaluwa entry');
   //       });
-  //     } else {
-  //       deferredEnter(args);
-  //     }
+  //     } 
   //   });  
 };
 

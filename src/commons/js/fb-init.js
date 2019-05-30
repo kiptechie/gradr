@@ -1,7 +1,7 @@
 import firebase from 'firebase/app';
 import auth from 'firebase/auth';
 import firestore from 'firebase/firestore';
-import 'firebase/performance';
+// import 'firebase/performance';
 
 const cfg = {
   apiKey: "AIzaSyAPtzAvpJFH6Dr2MO3TjrgV02dkoBC6Iho",
@@ -14,7 +14,7 @@ export const getConfig = () => cfg;
 
 export const init = () => {
   firebase.initializeApp(cfg);
-  firebase.performance();
+  // firebase.performance();
 };
 
 export default { init };

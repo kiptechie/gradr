@@ -182,20 +182,26 @@ export const responseCanErr = response => {
   return response;
 };
 
-export const isAfterKickoffTime = args => {
-  const { when = Date.now(), startingAt } = args;
-  const limit = new Date(`${startingAt}`);
+const dateToUTCTime = (d) => {
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()-1, d.getMinutes());
+};
 
-  limit.setTime(limit.getTime() + limit.getTimezoneOffset() * 60 * 1000);
-  return when >= limit.getTime();
+export const isAfterKickoffTime = args => {
+  const { startingAt } = args;
+
+  const when = dateToUTCTime( new Date(Date.now()) );
+  const limit = dateToUTCTime( new Date(`${startingAt}`) );
+  
+  return when >= limit;
 };
 
 export const isWithinDeadline = args => {
-  const { when = Date.now(), endingAt } = args;
-  const limit = new Date(`${endingAt}`);
+  const { endingAt } = args;
 
-  limit.setTime(limit.getTime() + limit.getTimezoneOffset() * 60 * 1000);
-  return when <= limit.getTime();
+  const when = dateToUTCTime( new Date(Date.now()) );
+  const limit = dateToUTCTime( new Date(`${endingAt}`) );
+  
+  return when <= limit;
 };
 
 const timeUnits = {
@@ -205,40 +211,43 @@ const timeUnits = {
   day: 1000 * 60 * 60 * 24
 };
 
-export const dateTimeDiff = (currentDate, endDate, type = 'day') => {
-  const diffType = Object.keys(timeUnits).includes(type) ? type : 'day';
-  const unitDiff = timeUnits[diffType];
+export const dateTimeDiff = (args = {}) => {
+  const { from = Date.now(), to = Date.now(), type = "hour" } = args;
 
-  const endDateMs =
-    typeof endDate === 'object'
-      ? endDate.getTime()
-      : new Date(endDate).getTime();
-  const currentDateMs =
-    typeof currentDate === 'object'
-      ? currentDate.getTime()
-      : new Date(currentDate).getTime();
-      
-  const diffMs = endDateMs - currentDateMs;
+  const fromTime = from;
+  const toTime = typeof to === "number" ? to : to.getTime();
 
-  return Math.round(diffMs / unitDiff);
+  let diff = Math.floor(toTime - fromTime) / timeUnits[type];
+  return Math.round(diff);
 };
 
-export const countDown = args => {
-  
-  const run = () => {
-    const { from = Date.now(), to, callback = noop, type = 'day' } = args;
-    const diff = dateTimeDiff(from, to, type);
+const dateTimeDiffRecurse = (args = {}) => {
+  const { to = Date.now(), type = "hour" } = args;
+  const diff = dateTimeDiff(args);
 
-    callback(diff);
-    rAF({ wait: timeUnits[type] }).then(() => run());
+  if (diff >= 1 || (diff <= 0 && type === "second"))
+    return { diff, diffType: type };
+
+  const timeTypeKeys = Object.keys(timeUnits);
+  let nextTypePos = timeTypeKeys.indexOf(type) - 1;
+  nextTypePos = nextTypePos < 0 ? 0 : nextTypePos;
+
+  return dateTimeDiffRecurse({ to, type: timeTypeKeys[nextTypePos] });
+};
+
+export const countDown = (args = {}) => {
+  const { type = "hour", callback = noop } = args;
+
+  const run = ({ type: timerType }) => {
+    const theArgs = { ...args, ...{ type: timerType } };
+    const { diff, diffType } = dateTimeDiffRecurse(theArgs);
+
+    callback({ diff, diffType });
+
+    if (diff <= 0 && diffType === "second") return;
+
+    const nextRun = timeUnits[diffType];
+    rAF({ wait: nextRun }).then(() => run({ type: timerType }));
   };
-  run();
-
-  // const diffTypes = Object.keys(timeUnits);
-  // const nextRun = diffTypes.indexOf(type) === 0 ?
-  // const intervalId = setInterval(() => {}, nextRun);
+  run({ type });
 };
-
-// export const recursiveDateTimeDiff = ( currentDate, endDate, type = 'day' ) => {
-//   const diff = dateTimeDiff(currentDate, endDate, type);
-// };

@@ -64,6 +64,10 @@ body[data-nav='playground'] {
   background: none;
 }
 
+body.mdc-dialog--open {
+  display: block;
+}
+
 body.mdc-dialog--open .mdc-dialog__scrim{
   z-index: 999;
   pointer-events: none;

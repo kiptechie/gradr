@@ -91,10 +91,10 @@ const assessmentIsLive = (assessmentDoc) => {
 };
 
 const enterPlayground = async (assessmentDoc) => {
-  notify('Busy, loading payground resources  ...');
+  notify('Busy, loading playground resources  ...');
 
   const playground = await importPlayground();
-  return playground.enter({ user: appUser, test: testId, assessmentDoc});
+  playground.enter({ user: appUser, test: testId, assessmentDoc});
 };
 
 const enterHome = (testId) => {
@@ -115,7 +115,7 @@ const bootstrapAssessment = async (user) => {
 
   if(assessmentIsLive(assessmentDoc)) {
     await enterPlayground(assessmentDoc);
-    initServiceBot();
+    // initServiceBot();
   }
 };
 
