@@ -49,6 +49,11 @@ body[data-nav=home] {
   background: url(../../commons/images/apps.svg) 100% 0 no-repeat;
 }
 
+[data-nav='home'] .mdc-layout-grid__cell--span-4.mdc-elevation--z4 {
+  padding: 1em;
+  background: #fff;
+}
+
 header a svg {
   pointer-events: none;
 }
@@ -129,6 +134,7 @@ header a svg {
 
 body[data-nav=specs] .mdc-card.text-only .mdc-card__primary-action {
   padding: 1rem;
+  min-height: 157px;
 }
 /* End Specs */
 
