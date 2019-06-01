@@ -1,7 +1,7 @@
 ## Welcome {name}
 
 This is an assessment to evaluate your eligibility for the {program} program.
-For this assessment you will be building {specname}, (a simple {app}), over {challenges} short challenges. 
+For this assessment you will be building *{specname}*, ({app}), over {challenges} short challenges. 
 
 ## Here's How to Proceed
 

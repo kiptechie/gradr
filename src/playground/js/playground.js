@@ -128,14 +128,20 @@ const showCountdown = async () => {
 };
 
 const createProject = async (email) => {
-  // TODO get this from the SPEC
-  const response = await fetch('/engines/tpl/start.html');
-  const code = await response.text();
+  let { starterCodebase } = spec;
+
+  // TODO remove this after fully migrating
+  // all starter code into SPECs
+  if(!starterCodebase) {
+    const response = await fetch('/engines/tpl/start.html');
+    starterCodebase = await response.text();
+  }
+
   const entry = {
     email,
-    code,
     assessment: testId,
-    firstSeen: Date.now()
+    firstSeen: Date.now(),
+    code: starterCodebase
   };
 
   const ref = await SUBMISSIONS.add(entry);
@@ -324,7 +330,7 @@ const challengeIntro = async () => {
     initProject();
   });
 
-  await getAssessmentSpec();
+  // await getAssessmentSpec();
   displayProgressAndInstructions(-1);
   switchPreviewToInstructions();
 };
@@ -529,6 +535,7 @@ const deferredEnter = async (args) => {
 
   goTo('playground', { test });
 
+  await getAssessmentSpec();
   const project = await createOrUpdateProject();
   proceed(project.data());
 };

@@ -1,6 +1,8 @@
 import firebase from "firebase/app";
 
+import marked from 'marked';
 import { html, render } from "lit-html";
+import emmet from '@emmetio/codemirror-plugin';
 
 import {
   select,
@@ -14,8 +16,9 @@ import {
 } from "../../commons/js/utils.js";
 
 let spec;
-let codeEditor;
 let builtUI = false;
+let starterEditor;
+let instructionsEditor;
 let activeChallengeIndex = -1;
 
 const SPECS = firebase.firestore().collection("specs");
@@ -34,12 +37,11 @@ const selectAChallenge = event => {
   const challenge = spec.challenges[pos];
   if (!challenge) return;
 
-  const challengeDetailsWrap = select(`[data-manage-challenge]`);
-  challengeDetailsWrap.setAttribute("data-manage-challenge", "on");
-  challengeDetailsWrap.setAttribute("data-manage-challenge-mode", "edit");
+  switchDetailsTo(`data-manage-challenge-instructions`);
 
   activeChallengeIndex = pos;
-  codeEditor.setValue(challenge.guide);
+  instructionsEditor.setValue(challenge.guide);
+  select('#toggle-viewer').classList.remove('mdc-icon-button--on');
 };
 
 const challengeListItemTPL = challenges => {
@@ -84,7 +86,7 @@ const canSaveSpec = () => {
 
 const clearInputValues = () => {
   spec = {};
-  if(codeEditor) codeEditor.setValue("");
+  if(instructionsEditor) instructionsEditor.setValue("");
   render(challengeListItemTPL([]), challengeListEl);
 
   [
@@ -128,17 +130,27 @@ const specAboutChanged = event => {
   spec.about = event.target.value;
 };
 
-const addAChallenge = () => {
-  const challengeDetailsWrap = select(`[data-manage-challenge]`);
-  challengeDetailsWrap.setAttribute("data-manage-challenge", "on");
-  challengeDetailsWrap.setAttribute("data-manage-challenge-mode", "create");
+const switchDetailsTo = attr => {
+  const node = select(`[${attr}]`);
+  if(!node) return;
 
+  if(node.getAttribute(`${attr}`) !== 'active') {
+    [...selectAll(`[data-details-item]`)].forEach(item => {
+      item.setAttribute('data-details-item', 'off');
+    });
+  }
+
+  node.setAttribute('data-details-item', 'active');
+};
+
+const addAChallenge = () => {
+  switchDetailsTo(`data-manage-challenge-instructions`);
   activeChallengeIndex = -1;
-  codeEditor.setValue("### Challenge Title");
+  instructionsEditor.setValue("### Challenge Title");
 };
 
 const saveAChallenge = () => {
-  const guide = codeEditor.getValue();
+  const guide = instructionsEditor.getValue();
   const value = guide && guide.match(/^\s*#{3}\s+(.*)/);
   if (value && Array.isArray(value) && value[1]) {
     const title = value[1];
@@ -152,6 +164,60 @@ const saveAChallenge = () => {
   }
 
   render(challengeListItemTPL(spec.challenges), challengeListEl);
+};
+
+const authorStarter = async () => {
+  switchDetailsTo(`data-manage-challenge-starter`);
+  let code = spec.starterCodebase;
+  if(!code) {
+    code = await import('../../commons/tpl/start.html');
+  }
+  starterEditor.setValue(code);  
+};
+
+const saveStarter = () => {
+  const starterCode = starterEditor.getValue();
+  if(starterCode && trim(starterCode) !== '') {
+    spec.starterCodebase = starterCode;
+    // TODO render it into a preview container
+  }
+};
+
+const renderStarter = () => {
+
+};
+
+const renderInstructions = () => {
+  const instructions = spec.challenges.reduce((all, {guide}) => `${all} \n\n ${guide}`, '');
+  select(`[data-preview='challenge-instructions'] .content`).innerHTML = marked(instructions, {
+    gfm: true,
+    smartLists: true
+  });
+};
+
+const togglePreviewEditModes = (event) => {
+  const activeNode = select(`[data-details-item='active']`);
+  if(!activeNode) return;
+
+  const inPreviewMode = activeNode.hasAttribute('data-preview');
+  if(inPreviewMode) {
+    const key = activeNode.getAttribute('data-preview');
+
+    renderStarter();
+    switchDetailsTo(`data-manage-${key}`);
+  } else {
+    const modeNode = activeNode.querySelector(`div[id]`);
+    const modeKey = modeNode.getAttribute('id');
+
+    const previewQry = `data-preview=${modeKey}`;
+    const previewNode = select(`[${previewQry}]`);
+    if(!previewNode) return;
+
+    renderInstructions();
+    switchDetailsTo(previewQry);
+  }
+
+  select('#toggle-viewer').classList.toggle('mdc-icon-button--on');
 };
 
 const buildUI = mode => {
@@ -185,6 +251,15 @@ const buildUI = mode => {
       "click",
       saveAChallenge
     );
+
+    select(`[data-action='set-starter-code']`).addEventListener('click', authorStarter);
+
+    select(`[data-action='save-starter']`).addEventListener(
+      "click",
+      saveStarter
+    );
+
+    select('#toggle-viewer').addEventListener('click', togglePreviewEditModes);
   });
 
   saveSpecBtn.addEventListener("click", () => {
@@ -199,13 +274,30 @@ const buildUI = mode => {
   loadCodemirrorAssets({
     mode: "markdown"
   }).then(() => {
-    codeEditor = CodeMirror(select("#challenge-instructions"), {
+    instructionsEditor = CodeMirror(select("#challenge-instructions"), {
       theme: "idea",
       autofocus: true,
       lineWrapping: true,
       matchBrackets: true,
       autoCloseBrackets: true,
       mode: { name: "markdown", highlightFormatting: true }
+    });
+  });
+
+  loadCodemirrorAssets({
+    mode: "htmlmixed"
+  }).then(() => {
+    starterEditor = CodeMirror(select("#challenge-starter"), {
+      theme: 'idea',
+      lineNumbers: true,
+      lineWrapping: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      mode: { name: 'htmlmixed' },
+      extraKeys: {
+        Tab: 'emmetExpandAbbreviation',
+        Enter: 'emmetInsertLineBreak'
+      }
     });
   });
 
@@ -304,7 +396,3 @@ export const adminWillViewSpecs = () => {
 };
 
 export default { adminWillViewSpecs };
-
-/*
-
-*/

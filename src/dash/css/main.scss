@@ -75,7 +75,7 @@ header a svg {
 }
 
 [data-view=create-edit-spec] .details-wrap {
-  padding: 1.8em 1.8em 1em 1.8em;
+  padding: 1em 1em 1em 1em;
 }
 
 [data-view=create-edit-spec] .details-wrap p {
@@ -91,24 +91,41 @@ header a svg {
 }
 
 #challenge-instructions {
-  min-height: 365px;
+  min-height: 420px;
   overflow: auto;
 }
 
-#challenge-instructions .CodeMirror-wrap {
-  min-height: 350px;
-}
-
-[data-manage-challenge=on] {
-  display: block;
-  opacity: 1;
-}
-
-[data-manage-challenge=off] {
-  display: none;
+[data-details-item] {
   opacity: 0;
+  display: none;
   transition: opacity 0.5s ease-in;
 }
+
+[data-details-item=active] {
+  opacity: 1;
+  display: block;
+}
+
+[data-details-item] .CodeMirror-wrap {
+  min-height: 415px;
+}
+
+[data-view=create-edit-spec] #toggle-viewer {
+  margin-bottom: 0.5em;
+}
+
+[data-view=create-edit-spec] [data-preview] {
+  min-height: 455px;
+  max-height: 555px;
+}
+
+[data-view=create-edit-spec] [data-preview] .content {
+  margin-left: 0.7em;
+  overflow: auto;
+  max-height: 500px;
+}
+
+@import '../../commons/css/guide.scss';
 
 body[data-nav=specs] .mdc-card.text-only .mdc-card__primary-action {
   padding: 1rem;

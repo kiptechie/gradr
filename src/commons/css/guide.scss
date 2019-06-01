@@ -1,0 +1,50 @@
+  
+  #instructions [data-challenge-info] img,
+  [data-preview] .content.instructions img {
+    width: 100%;
+    height: auto;
+  }
+  
+  #instructions [data-challenge-info] blockquote,
+  [data-preview] .content.instructions blockquote {
+    margin: 0;
+    padding: 1em;
+    background: lavender;
+  }
+  
+  #instructions [data-challenge-info] code,
+  [data-preview] .content.instructions code {
+    background: darkmagenta;
+    color: #fff;
+    padding: 2px 7px;
+    font-weight: bold;
+  }
+  
+  #instructions [data-challenge-info] pre,
+  [data-preview] .content.instructions pre {
+    padding: 1em;
+    background: lavender;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  #instructions [data-challenge-info] pre code,
+  [data-preview] .content.instructions pre code {
+    background: none;
+    color: darkmagenta;
+    font-size: 130%;
+  }
+  
+  #instructions [data-challenge-info] em,
+  [data-preview] .content.instructions em {
+    font-weight: bold;
+  }
+  
+  #instructions .step,
+  [data-preview] .content.instructions .step {
+    font-size: 67%;
+  }

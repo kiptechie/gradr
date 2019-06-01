@@ -80,6 +80,7 @@ const fetchImpliedAssessment = () => {
 };
 
 const assessmentIsLive = (assessmentDoc) => {
+  return true;
   const { startingAt } = assessmentDoc.data();
   if (isAfterKickoffTime({ startingAt })) return true;
 
