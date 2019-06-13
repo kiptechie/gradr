@@ -1,11 +1,8 @@
-let assessmentId;
+let specId;
 let parentWindow;
 
 const executeScript = code =>
   new Promise(resolve => {
-    // TODO proceed only after linting
-    // TODO prevent infinite loops
-    // TODO convert root const / let declarations to var
 
     let ast = esprima.parseScript(code);
     if(gradrInstrumentation && typeof gradrInstrumentation === 'function') {
@@ -17,8 +14,8 @@ const executeScript = code =>
         node.kind = 'var';
       }
     }
-    const codeToRun = escodegen.generate(ast);
 
+    const codeToRun = escodegen.generate(ast);
     const script = document.body.querySelector('#codesink');
     if (script) {
       script.remove();
@@ -50,8 +47,8 @@ const runAudits = payload => {
   if(gradr && typeof gradr === 'function') {
     gradr(payload)
     .then(({ completedChallenge }) => {
-      const msg = `Greate Job. You Have Completed Challenge ${completedChallenge +
-        1}. Your App Should Be Functional`;
+      const done = completedChallenge + 1;
+      const msg = `Greate Job Completing Challenge ${done}. Your App Should Be Functional`;
       parentWindow.postMessage(
         {
           feedback: {
@@ -77,13 +74,13 @@ const runAudits = payload => {
 
 const installAssessment = event =>
   new Promise((resolve, reject) => {
-    if (!assessmentId) {
-      assessmentId = event.data.assessment;
+    if (!specId) {
+      specId = event.data.spec;
 
       const script = document.createElement('script');
       script.setAttribute(
         'src',
-        `${window.location.origin}/engines/${assessmentId}.js`
+        `${window.location.origin}/engines/${specId}.js`
       );
       script.onerror = reject;
       script.onload = resolve;

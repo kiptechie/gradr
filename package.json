@@ -2,6 +2,7 @@
   "name": "gradr",
   "version": "1.0.0",
   "scripts": {
+    "lint": "eslint src -c src/.eslintrc.json",
     "develop-playground": "parcel src/playground/index.html --out-dir dev-build",
     "develop-admin": "parcel src/dash/index.html --out-dir dev-build",
     "build-playground": "parcel build src/playground/index.html --out-dir dist/playground",

@@ -555,9 +555,8 @@ const buildUI = ({ mode }) => {
         first.textContent = "Choose Option";
         combo.insertBefore(first, combo.querySelector("option"));
 
-        const specOption = combo.querySelector(
-          `option[value=${assessment.spec}]`
-        );
+        const options = combo.querySelectorAll('option');
+        const specOption = [...options].find(opt => opt.value === assessment.spec);
 
         if (specOption) {
           specOption.setAttribute("selected", "selected");

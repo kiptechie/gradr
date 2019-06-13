@@ -98,33 +98,33 @@ const switchPreviewToInstructions = () => {
 const showCountdown = async () => {
   if (!('RelativeTimeFormat' in Intl)) {
     await import('intl-relative-time-format');
-    
-    const { endingAt } = assessment;
-    const deadline = new Date(`${endingAt}`);
-
-    const timeSplainer = select(`[data-timer]`);
-    const timer = timeSplainer.querySelector('span');
-    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-    const displayCountdown = ({ diff, diffType }) => {
-      if (diff < 0 && diffType === 'second') {
-        let type = 'hour';
-        let ellapsedDiff = dateTimeDiff({ to: deadline, type });
-
-        if(ellapsedDiff > 24) {
-          type = 'day'
-          ellapsedDiff = dateTimeDiff({ to: deadline, type });
-        }
-
-        timer.textContent = rtf.format(ellapsedDiff, type);
-        return;
-      }
-      timer.textContent = rtf.format(diff, `${diffType}`);
-      timeSplainer.setAttribute('data-timer-on', 'why-not');
-    };
-  
-    countDown({ to: deadline, callback: displayCountdown });
   }
+
+  const { endingAt } = assessment;
+  const deadline = new Date(`${endingAt}`);
+
+  const timeSplainer = select(`[data-timer]`);
+  const timer = timeSplainer.querySelector('span');
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+  const displayCountdown = ({ diff, diffType }) => {
+    if (diff < 0 && diffType === 'second') {
+      let type = 'hour';
+      let ellapsedDiff = dateTimeDiff({ to: deadline, type });
+
+      if(ellapsedDiff > 24) {
+        type = 'day'
+        ellapsedDiff = dateTimeDiff({ to: deadline, type });
+      }
+
+      timer.textContent = rtf.format(ellapsedDiff, type);
+      return;
+    }
+    timer.textContent = rtf.format(diff, `${diffType}`);
+    timeSplainer.setAttribute('data-timer-on', 'why-not');
+  };
+
+  countDown({ to: deadline, callback: displayCountdown });
 };
 
 const createProject = async (email) => {
@@ -315,7 +315,11 @@ const initProject = async () => {
   select('body').setAttribute('data-assessment', started);
   
   progressTo(challengeIndex);
-  notify(`Yo, you can now begin the assessment. Take it away ${appUser.displayName.split(/\s+/)[0]}!`);
+  let aName = [''];
+  if(appUser && appUser.displayName) {
+    aName = appUser.displayName.split(/\s+/);
+  }
+  notify(`Yo, you can now begin the assessment. Take it away ${aName[0]}!`);
   rAF({ wait: 500 }).then(() => {
     select('body').classList.remove('mdc-dialog-scroll-lock', 'mdc-dialog--open');
   });
@@ -325,7 +329,10 @@ const challengeIntro = async () => {
   select('button.action-begin').addEventListener('click', (event) => {
     select('body').classList.add('mdc-dialog-scroll-lock', 'mdc-dialog--open');
 
-    const aName = appUser.displayName.split(/\s+/);
+    let aName = [''];
+    if(appUser && appUser.displayName) {
+      aName = appUser.displayName.split(/\s+/);
+    }
     notify(`Thats right ${aName[0]}! Please wait while we start things off for you ...`);
     initProject();
   });
@@ -351,6 +358,7 @@ const playCode = () => {
   sandboxWindow.postMessage(
     {
       payload,
+      spec: spec.id,
       assessment: testId
     },
     window.location.origin
@@ -430,7 +438,7 @@ const setTheStage = async (challengeIndex, started) => {
 };
 
 const saveWork = async ({completedChallenge, challengeIndex}) => {
-  return await updateProjectWork({
+  return updateProjectWork({
     challengeIndex,
     completedChallenge,
     lastRun: Date.now(),
@@ -441,20 +449,17 @@ const saveWork = async ({completedChallenge, challengeIndex}) => {
 const handleSandboxMessages = async (event) => {
   if (event.origin !== window.location.origin) return;
 
-  const { error, feedback, advancement } = event.data;
-  if(error) {
-    notify('ERROR', error);
-    return;
-  }
+  const { feedback, advancement } = event.data;
 
   if (feedback) {
-    const { message } = feedback;
-    notify(message);
+    notify(feedback.message);
   }
 
   const { endingAt } = assessment;
   if (isWithinDeadline({ endingAt })) {
     // TODO this condition on advancement prevents challange-1 code from being saved
+    // console.log(advancement);
+
     if(advancement) {
       const { index, completed } = advancement;
       const normalisedIndex = index >= spec.challenges.length ? completed : index;
@@ -492,9 +497,9 @@ const proceed = async (project) => {
   editor = codeEditor;
   editor.setValue(code);
 
-  // editor.on("beforeChange", (_, change) => {
-  //   if (change.origin === 'paste') change.cancel();
-  // });
+  editor.on("beforeChange", (_, change) => {
+    if (change.origin === 'paste') change.cancel();
+  });
   editor.refresh();
 
   instructions = select('#instructions');
@@ -545,23 +550,19 @@ export const enter = async (args = {}) => {
   deferredEnter(args);
 
   // SUBMISSIONS
-  //   .where('email', '==', 'chaluwa@gmail.com')
-  //   .where('assessment', '==', 'ftvOCDuoSB29i8y69lAZ')
+  // .where('email', '==', 'chaluwa@gmail.com')
+  //   .where('assessment', '==', 'jqe3zYO8xTfiuCLDEEgu') 
   //   .get()
   //   .then(snapshot => {
   //     if(snapshot.empty === false) {
-  //       const [doc] = snapshot.docs;
-  //       SUBMISSIONS.doc(doc.id).delete().then(() => {
-  //         console.log('deleted chaluwa entry');
+  //       snapshot.docs.forEach(doc => {
+  //         SUBMISSIONS.doc(doc.id).delete().then(() => {
+  //           console.log('deleted entry');
+  //         });
   //       });
   //     } 
   //   });  
 };
-
 export default { enter };
 
-
-// TODO Code Playback
-// TODO Code Comparison
-// TODO Code Similarity
 
