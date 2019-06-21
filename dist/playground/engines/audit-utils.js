@@ -1,3 +1,5 @@
+const noop = () => {};
+
 const select = document.querySelector.bind(document);
 const selectAll = document.querySelectorAll.bind(document);
 
@@ -48,6 +50,7 @@ const isOrUnder = expected => actual => actual <= expected;
 
 const asIs = value => value;
 const asHex = rgb => {
+  console.log(rgb);
   const hex = rgb
     .replace(/[rgba?()]/g, '')
     .split(/\s*,\s*/)
@@ -69,6 +72,7 @@ const on = nodeOrSelector => {
 
   const ifThe = (prop, transform, check) => {
     const actual = transform(css(nodeOrSelector, prop));
+    // console.log(`${prop} on ${nodeOrSelector} => ${actual} : ${check(actual)}`);
     results.push(check(actual));
     return box(ifThe, tellMe);
   };
@@ -154,6 +158,80 @@ const queryNamedArrowFnHasCalls = ({ name, kind = 'const', calls = [] }) => {
   `;
   return query;
 };
+
+const queryNamedArrowFnHasParams = ({name, kind = 'const', params = []}) => {
+  const paramsSubQuery = params.reduce((prevQuery, param, index) => {
+    const prefix = index === 0 ? '' : `${prevQuery} &&`;
+    let qry = `${prefix} /:params`;
+    if(typeof param === 'string' || param.type === 'Identifier') {
+      qry = `${qry} Identifier [@name == '${param.name || param}']`;
+    } else if (param.type === 'AssignmentPattern') {
+      qry = `${qry} AssignmentPattern [
+        /:left ${param.left.type} [@name == '${param.left.name}']
+        && /:right ${param.right.type}
+      ]`;
+    } else if (param.type === 'ArrayPattern') {
+      qry = `${qry} ArrayPattern [
+      	// Identifier [@name == '${param.name}']
+      ]`;
+    } else if (param.type === 'ObjectPattern') {
+      qry = `${qry} ObjectPattern [
+      	/Property /Identifier [@name == '${param.name}']
+      ]`;
+    }else {
+      qry = prevQuery;
+    }
+
+    return qry;
+  }, '');
+
+  // let x = [{
+  //   type: 'Identifier', name: 'figure'
+  // }, {
+  //   type: AssignmentPattern, 
+  //   left: {type: 'Identifier', name: 'options'},
+  //   right: {type: 'ArrayExpression'}
+  // }];
+
+  const query = `
+    //VariableDeclaration [
+      @kind == '${kind}' &&
+      /:declarations VariableDeclarator [
+        /:id Identifier [@name == '${name}'] 
+        && /:init ArrowFunctionExpression [
+            ${paramsSubQuery}
+          ]
+       ]
+    ]
+  `;
+
+  return query;
+};
+
+const queryNamedArrowFnHasOnlySimpleParams = ({name, kind = 'const', params = []}) => {
+  const paramsSubQuery = params.reduce((prevQuery, param, index) => {
+    const prefix = index === 0 ? '' : `${prevQuery} &&`;
+    const query = `${prefix} /:params `;
+    
+
+
+    return query;
+  }, '');
+
+  const query = `
+    //VariableDeclaration [
+      @kind == '${kind}' &&
+      /:declarations VariableDeclarator [
+        /:id Identifier [@name == '${name}'] 
+        && /:init ArrowFunctionExpression [
+          ${paramsSubQuery}
+        ]
+      ]
+    ]
+  `;
+
+  return query;
+}
 
 // TODO wrap the event calls under
 // /: arguments
@@ -263,36 +341,3 @@ const asyncChain = (...challenges) =>
       return prevAudit.then(partial => challenge(partial));
     }, Promise.resolve(codebase));
   };
-
-// TODO proceed only after linting
-// TODO prevent infinite loops
-// TODO integrate error reporting / logging
-// TODO integrate Google analytics
-// TODO integrate FB performance tracking
-// TODO Code Playback
-// TODO Code Comparison and Similarity
-// TODO use keyboard signature for anti-plagiarism
-// TODO Spec admin should have "tabs" for Challenges and Starter Code
-// TODO split code starter into html, css, js, .md files, each on its own tab
-// TODO explore custom MD theme and shape for playground
-// TODO explore dark mode for playground
-// TODO Spec should have difficulty levels. That way, we dont have to create too many app ideas
-// to test for these levels. Maybe just clone an exiting Spec and modify into a new one after
-// changing the difficulty level. TIPy-1 can use default promises while 2 uses async/await
-
-// TODO An Assessment can be for one or more Specs, such that candidates are required to complete
-// them to have passed the assessment. Imagine doing this for 3 levels of TIPy, helping to
-// establish the enginner understands the basics all the way up to advanced concetps
-
-/*
-arrowFn({name: 'fetchAndDisplayUsers'})
-.params
-  .has(objectPattern({name: 'target'}))
-  .andHas()
-  .orHas()
-.body
-  .has()
-  .has()
-  .has()
-.query(ast);
-*/
