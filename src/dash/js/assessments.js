@@ -689,3 +689,18 @@ export const adminWillViewTests = () => {
 };
 
 export default { adminWillViewTests };
+
+  // SUBMISSIONS
+  // .where('email', '==', 'chaluwa@gmail.com')
+  //   .where('assessment', '==', 'JrXPFe38onUOUkl1gUHN') 
+  //   .get()
+  //   .then(snapshot => {
+  //     if(snapshot.empty === false) {
+  //       snapshot.docs.forEach(doc => {
+  //         // console.log(doc.data().code);
+  //         // SUBMISSIONS.doc(doc.id).delete().then(() => {
+  //         //   console.log('deleted entry');
+  //         // });
+  //       });
+  //     } 
+  //   }); 

@@ -591,21 +591,21 @@ const challengeThree = {
                         @kind == 'const' &&
                           /:declarations VariableDeclarator [
                             /:id Identifier [@name == 'user']
-                      && /:init CallExpression [
-                        /:callee Identifier [@name == 'getSelectedUser']
-                      ]
-                        ]
+                            && /:init CallExpression [
+                              /:callee Identifier [@name == 'getSelectedUser']
+                            ]
+                          ]
                       ]
                         
-                        && //VariableDeclaration [
+                      && //VariableDeclaration [
                         @kind == 'const' &&
                           /:declarations VariableDeclarator [
                             /:id Identifier [@name == 'bmi']
-                      && /:init CallExpression [
-                        /:callee Identifier [@name == 'computeBMI']
-                        && /:arguments Identifier [@name == 'user']
-                      ]
-                        ]
+                            && /:init CallExpression [
+                              /:callee Identifier [@name == 'computeBMI']
+                              && /:arguments Identifier [@name == 'user']
+                            ]
+                         ]
                       ]
                     ]
                   ]

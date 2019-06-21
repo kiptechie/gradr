@@ -547,21 +547,7 @@ const deferredEnter = async (args) => {
 
 export const enter = async (args = {}) => {
   notify('Building your playground, please wait ...');
-  deferredEnter(args);
-
-  // SUBMISSIONS
-  // .where('email', '==', 'chaluwa@gmail.com')
-  //   .where('assessment', '==', 'jqe3zYO8xTfiuCLDEEgu') 
-  //   .get()
-  //   .then(snapshot => {
-  //     if(snapshot.empty === false) {
-  //       snapshot.docs.forEach(doc => {
-  //         SUBMISSIONS.doc(doc.id).delete().then(() => {
-  //           console.log('deleted entry');
-  //         });
-  //       });
-  //     } 
-  //   });  
+  deferredEnter(args); 
 };
 export default { enter };
 
