@@ -27,6 +27,8 @@ let assessment;
 let instructions;
 let sandboxWindow;
 
+let assessmentProgress = {};
+
 const SPECS = firebase.firestore().collection('specs');
 const SUBMISSIONS = firebase.firestore().collection('submissions');
 
@@ -312,6 +314,7 @@ const initProject = async () => {
   const started = Date.now();
 
   await updateProjectWork({ started, challengeIndex });
+  assessmentProgress = {...assessmentProgress, ...{challengeIndex, completedChallenge: -1}};
   select('body').setAttribute('data-assessment', started);
   
   progressTo(challengeIndex);
@@ -444,6 +447,8 @@ const saveWork = async ({completedChallenge, challengeIndex}) => {
     lastRun: Date.now(),
     code: editor.getValue()
   });
+
+  assessmentProgress = {...assessmentProgress, ...{challengeIndex, completedChallenge}};
 };
 
 const handleSandboxMessages = async (event) => {
@@ -467,7 +472,7 @@ const handleSandboxMessages = async (event) => {
         challengeIndex: normalisedIndex
       });
       progressTo(index);
-    } else {
+    } else if (assessmentProgress.completedChallenge < 0) {
       saveWork({
         challengeIndex: 0,
         completedChallenge: -1
