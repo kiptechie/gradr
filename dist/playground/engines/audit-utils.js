@@ -50,7 +50,6 @@ const isOrUnder = expected => actual => actual <= expected;
 
 const asIs = value => value;
 const asHex = rgb => {
-  console.log(rgb);
   const hex = rgb
     .replace(/[rgba?()]/g, '')
     .split(/\s*,\s*/)

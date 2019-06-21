@@ -438,7 +438,7 @@ const setTheStage = async (challengeIndex, started) => {
 };
 
 const saveWork = async ({completedChallenge, challengeIndex}) => {
-  return updateProjectWork({
+  await updateProjectWork({
     challengeIndex,
     completedChallenge,
     lastRun: Date.now(),
@@ -457,8 +457,6 @@ const handleSandboxMessages = async (event) => {
 
   const { endingAt } = assessment;
   if (isWithinDeadline({ endingAt })) {
-    // TODO this condition on advancement prevents challange-1 code from being saved
-    // console.log(advancement);
 
     if(advancement) {
       const { index, completed } = advancement;
@@ -469,7 +467,12 @@ const handleSandboxMessages = async (event) => {
         challengeIndex: normalisedIndex
       });
       progressTo(index);
-    } 
+    } else {
+      saveWork({
+        challengeIndex: 0,
+        completedChallenge: -1
+      });
+    }
   } else {
     notify( testOverMsg );
   }

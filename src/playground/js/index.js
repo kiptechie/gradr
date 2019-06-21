@@ -107,7 +107,7 @@ const initServiceBot = () => loadStylesAndScripts('/engines/service-bot.js');
 const bootstrapAssessment = async (user) => {
   appUser = user;
 
-  let assessmentDoc = await fetchImpliedAssessment();
+  const assessmentDoc = await fetchImpliedAssessment();
   if(!assessmentDoc || !assessmentDoc.exists) {
     notify(invalidURLMsg);
     return;
