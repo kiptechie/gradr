@@ -960,9 +960,8 @@ const challengeFour = {
         )
       );
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      const testSuite = chain(...tests)
+      const testSuite = chain(...tests);
+      await new Promise(resolve => setTimeout(resolve, 2500));    
       await auditJavascript(script, testSuite);
       resolve(payload);
       
