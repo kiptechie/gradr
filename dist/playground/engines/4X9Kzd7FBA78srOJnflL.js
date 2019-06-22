@@ -77,7 +77,7 @@ const challengeOne = {
         haltWithFeedback(`You don't yet have a DIV with a '.actions' CSS class ?`);
       }
 
-      const stars = actions.querySelectorAll('.material-icons');
+      const stars = selectAll('.actions .material-icons');
       if (!stars || stars.length !== 5) {
         haltWithFeedback(`You don't yet have the number of required rating stars in the '.actions' DIV ?`);
       }
@@ -259,7 +259,9 @@ const challengeTwo = {
 
       const declaresDisplayMenuFn = createAudit(queryNamedArrowFnHasParams, {
         name: 'displayMenu',
-        params: ['options']
+        params: [{
+          type: 'ObjectPattern', name: 'results'
+        }]
       });
 
       const displayMenuFnHasAssignment = async ({ ast, astq }) => {
@@ -271,13 +273,24 @@ const challengeTwo = {
                 /:id Identifier [@name == 'displayMenu'] 
                 && /:init ArrowFunctionExpression [
                   /:body BlockStatement [
-                      //AssignmentExpression [
+                      //VariableDeclarator [
+                          /:id ArrayPattern //Identifier [@name == 'data']
+                          && /:init Identifier [@name == 'results']
+                      ]
+
+                      && //AssignmentExpression [
                           /:left Identifier [@name == 'menu']
-                          && /:right Identifier [@name == 'options']
+                          && /:right CallExpression [
+                            /:callee MemberExpression [
+                                  /:object Identifier [@name == 'Object']
+                                  && /:property Identifier [@name == 'values']
+                             ]
+                            && /:arguments Identifier [@name == 'data']
+                         ]
                       ]
                     ]
                   ]
-              ]
+               ]
             ]
           `;
           const [node] = astq.query(ast, query);
@@ -294,21 +307,21 @@ const challengeTwo = {
           const query = `
             //VariableDeclaration [
               @kind == 'const' &&
-              /:declarations VariableDeclarator [
-                /:id Identifier [@name == 'fetchAndDisplayMenu'] 
-                && /:init ArrowFunctionExpression [
-                    /:body BlockStatement [
-                      //VariableDeclaration [
-                        @kind == 'const' &&
-                        /:declarations VariableDeclarator [
-                          /:id Identifier [@name == 'api']
-                          && /:init Literal [@value == 'https://my.api.mockaroo.com/meals?key=18865cd0']
-                        ]
+                /:declarations VariableDeclarator [
+                  /:id Identifier [@name == 'fetchAndDisplayMenu'] 
+                  && /:init ArrowFunctionExpression [
+                      /:body BlockStatement [
+                        //VariableDeclaration [
+                          @kind == 'const' &&
+                          /:declarations VariableDeclarator [
+                            /:id Identifier [@name == 'api']
+                            && /:init Literal [@value == 'https://randomapi.com/api/d12c99b82acfefae33f7ce9239b57811']
+                          ]
+                      ]
                     ]
-                  ]
+                ]
               ]
             ]
-          ]
           `;
 
           const [node] = astq.query(ast, query);

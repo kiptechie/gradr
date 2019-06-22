@@ -27,7 +27,9 @@ let assessment;
 let instructions;
 let sandboxWindow;
 
+let batchedProgress = [];
 let assessmentProgress = {};
+let savingBatchedProgress = false;
 
 const SPECS = firebase.firestore().collection('specs');
 const SUBMISSIONS = firebase.firestore().collection('submissions');
@@ -129,6 +131,8 @@ const showCountdown = async () => {
   countDown({ to: deadline, callback: displayCountdown });
 };
 
+const updateProjectWork = changes => SUBMISSIONS.doc(projectId).update(changes);
+
 const createProject = async (email) => {
   let { starterCodebase } = spec;
 
@@ -148,7 +152,8 @@ const createProject = async (email) => {
 
   const ref = await SUBMISSIONS.add(entry);
   projectId = ref.id;
-  return await SUBMISSIONS.doc(projectId).get();  
+  const project = await SUBMISSIONS.doc(projectId).get();  
+  return project;
 };
 
 const updateLastSeenTime = async (project) => {
@@ -158,7 +163,8 @@ const updateLastSeenTime = async (project) => {
   };
 
   await updateProjectWork(entry);
-  return await SUBMISSIONS.doc(projectId).get();
+  const updated = await SUBMISSIONS.doc(projectId).get();
+  return updated;
 };
 
 const createOrUpdateProject = async () =>  {
@@ -170,14 +176,16 @@ const createOrUpdateProject = async () =>  {
     const snapshot = await query.get();
     if(snapshot.empty === true) {
       notify('Initialising your assessment, please wait ...');
-      return await createProject(email);
+      const created = await createProject(email);
+      return created;
     } 
 
     const [doc] = snapshot.docs;
-    return await updateLastSeenTime({
+    const updated = await updateLastSeenTime({
       id: doc.id, 
       data: doc.data()
     });
+    return updated;
 };
 
 const setupInstructions = async (challengeIndex) => {
@@ -307,14 +315,12 @@ const getCode = () => {
   return codebase;
 };
 
-const updateProjectWork = changes => SUBMISSIONS.doc(projectId).update(changes);
-
 const initProject = async () => {
   const challengeIndex = 0;
   const started = Date.now();
 
   await updateProjectWork({ started, challengeIndex });
-  assessmentProgress = {...assessmentProgress, ...{challengeIndex, completedChallenge: -1}};
+  assessmentProgress = {challengeIndex, completedChallenge: -1};
   select('body').setAttribute('data-assessment', started);
   
   progressTo(challengeIndex);
@@ -329,7 +335,7 @@ const initProject = async () => {
 };
 
 const challengeIntro = async () => {
-  select('button.action-begin').addEventListener('click', (event) => {
+  select('button.action-begin').addEventListener('click', () => {
     select('body').classList.add('mdc-dialog-scroll-lock', 'mdc-dialog--open');
 
     let aName = [''];
@@ -440,15 +446,37 @@ const setTheStage = async (challengeIndex, started) => {
   return { codeEditor, sandbox, viewer };
 };
 
-const saveWork = async ({completedChallenge, challengeIndex}) => {
+const saveWorkBatched = async () => {
+  savingBatchedProgress = true;
+  const start = {completedChallenge: -1, challengeIndex: 0};
+  const performance = batchedProgress.reduce((perf, {completedChallenge, challengeIndex}) => {
+    if(completedChallenge > perf.completedChallenge) {
+      return {completedChallenge, challengeIndex};
+    }
+    return perf;
+  }, start);
+
   await updateProjectWork({
-    challengeIndex,
-    completedChallenge,
+    ...performance,
     lastRun: Date.now(),
     code: editor.getValue()
   });
 
-  assessmentProgress = {...assessmentProgress, ...{challengeIndex, completedChallenge}};
+  batchedProgress = [];
+  savingBatchedProgress = false;
+  assessmentProgress = {...assessmentProgress, ...performance};
+};
+
+const saveWork = ({completedChallenge, challengeIndex}) => {
+  if(batchedProgress.length === 0) {
+    setTimeout(() => {
+      saveWorkBatched();
+    }, 5000);
+  }
+
+  if(savingBatchedProgress === true) return;
+
+  batchedProgress.push({completedChallenge, challengeIndex});
 };
 
 const handleSandboxMessages = async (event) => {
@@ -467,15 +495,15 @@ const handleSandboxMessages = async (event) => {
       const { index, completed } = advancement;
       const normalisedIndex = index >= spec.challenges.length ? completed : index;
 
-      await saveWork({
+      saveWork({
         completedChallenge: completed,
         challengeIndex: normalisedIndex
       });
       progressTo(index);
-    } else if (assessmentProgress.completedChallenge < 0) {
+    } else {
       saveWork({
-        challengeIndex: 0,
-        completedChallenge: -1
+        challengeIndex: assessmentProgress.challengeIndex,
+        completedChallenge: assessmentProgress.completedChallenge
       });
     }
   } else {
@@ -521,6 +549,13 @@ const proceed = async (project) => {
   
   if (whereAmI >= 0) {
     await progressTo(whereAmI);
+    const existingWork = await SUBMISSIONS.doc(projectId).get();
+    const data = existingWork.data();
+    assessmentProgress = {...assessmentProgress, ...{
+      challengeIndex: data.challengeIndex,
+      completedChallenge: data.completedChallenge 
+    }};
+
     const { endingAt } = assessment;
     if (isWithinDeadline({ endingAt })) {
       if((whereAmI + 1) >= spec.challenges.length) {
