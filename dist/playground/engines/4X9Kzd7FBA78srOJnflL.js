@@ -902,7 +902,7 @@ const challengeFour = {
           const tip = parseFloat( (satisfaction / 50 ) * meal.price ).toFixed(1);
           return tip;
         };
-      
+
         const myFormatMoney = (figure) => {
           return figure.toLocaleString('en-US', {
             style: 'currency', currency: 'USD'
@@ -914,18 +914,15 @@ const challengeFour = {
             const allRated = selectAll('.actions [data-rate].rated');
             [...allRated].forEach(star => star.classList.remove('rated'));
 
-            const item = selectAll('.menu .item')[mealIndex];
+            const item = selectAll('.menu .item')[mealIndex - 1];
             item.setAttribute('data-selected', '');
             
-            const thirdStar = select(`.actions [data-rate='3']`);
-            const rateIt = rateMeal;
-            rateIt({target: thirdStar});
+            const rate = parseInt((Math.random() * 5) + 1);
+            const star = select(`.actions [data-rate='${rate}']`);
+            rateMeal({target: star});
 
-            const tipIt = calculateTip;
-            const tip = tipIt();
-
-            const formatIt = formatMoney;
-            const formated = formatIt(tip);
+            const tip = calculateTip();
+            const formated = formatMoney(tip);
 
             const myTip = myCalculateTip();
             const myFormat = myFormatMoney(myTip);
@@ -940,10 +937,14 @@ const challengeFour = {
           } catch (error) {}
         };
 
-        const take1 = await rateMealAndCalculateTip(2);
-        const take2 = await rateMealAndCalculateTip(3);
+        const outcomes = await Promise.all([
+          rateMealAndCalculateTip(1),
+          rateMealAndCalculateTip(2),
+          rateMealAndCalculateTip(3),
+          rateMealAndCalculateTip(4)
+        ]);
         
-        return  take1 && take2;
+        return !outcomes.includes(false);
       };
 
       const tests = [];
