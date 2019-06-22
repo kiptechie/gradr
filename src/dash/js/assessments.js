@@ -1,10 +1,10 @@
-import firebase from "firebase/app";
-import Chart from "chart.js";
+import firebase from 'firebase/app';
+import Chart from 'chart.js';
 import 'chartjs-plugin-colorschemes';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import 'chartjs-plugin-doughnutlabel';
 
-import { html, render } from "lit-html";
+import { html, render } from 'lit-html';
 
 import {
   select,
@@ -15,42 +15,44 @@ import {
   exceptId,
   dateTimeDiff,
   selectAll
-} from "../../commons/js/utils.js";
+} from '../../commons/js/utils.js';
 
 let chart;
 let builtUI = false;
 let assessment = {};
 let candidates = [];
 
+let monitoringCanSaveTest = false;
+
 const specifications = [];
 
-const SPECS = firebase.firestore().collection("specs");
-const ASSESSMENTS = firebase.firestore().collection("assessments");
-const SUBMISSIONS = firebase.firestore().collection("submissions");
+const SPECS = firebase.firestore().collection('specs');
+const ASSESSMENTS = firebase.firestore().collection('assessments');
+const SUBMISSIONS = firebase.firestore().collection('submissions');
 
-const testsListEl = select("#tests-list");
+const testsListEl = select('#tests-list');
 const saveTestBtn = select(`[data-action='save-test']`);
 const extractTestIDBtn = select(`[data-action='extract-test-id']`);
 
 const getAssessmentPublicKey = () =>
   assessment.id
-    .split("")
+    .split('')
     .reverse()
-    .join("");
+    .join('');
 
 const setAssessmentObject = (obj = {}) => {
   assessment = obj;
 
   if (obj.id) {
-    extractTestIDBtn.removeAttribute("disabled");
+    extractTestIDBtn.removeAttribute('disabled');
   } else {
-    extractTestIDBtn.setAttribute("disabled", "disabled");
+    extractTestIDBtn.setAttribute('disabled', 'disabled');
   }
 };
 
 const query = (path, clauses = []) => {
   const collection =
-    typeof path === "string" ? firebase.firestore().collection(path) : path;
+    typeof path === 'string' ? firebase.firestore().collection(path) : path;
 
   return clauses
     .reduce((queryBuilder, queryString) => {
@@ -81,9 +83,11 @@ const getChallengeCount = () => {
 const perfQuery = percentile =>
   getChallengeCount()
     .then(challengeCount => {
-      if(percentile >= 0)  {
+      if (percentile >= 0) {
         return [
-          `completedChallenge == ${Math.ceil(percentile * (challengeCount - 1))}`
+          `completedChallenge == ${Math.ceil(
+            percentile * (challengeCount - 1)
+          )}`
         ];
       }
 
@@ -121,42 +125,43 @@ const doesAssessmentHaveSubmissions = () =>
   });
 
 const extriesAreValid = () => {
-  const { name, slug, cycle, startingAt, endingAt } = assessment;
+  const { name, cycle, startingAt, endingAt } = assessment;
 
   return (
-    trim(name) !== "" &&
-    trim(cycle) !== "" &&
-    trim(endingAt) !== "" &&
-    trim(startingAt) !== ""
+    trim(name) !== '' &&
+    trim(cycle) !== '' &&
+    trim(endingAt) !== '' &&
+    trim(startingAt) !== ''
   );
 };
 
 const clearInputValues = () => {
   [
-    select("#testname-field input"),
-    select("#testcycle-field input"),
-    select("#from-date-field input"),
-    select("#to-date-field input"),
-    select("#select-spec select")
+    select('#testname-field input'),
+    select('#testcycle-field input'),
+    select('#from-date-field input'),
+    select('#to-date-field input'),
+    select('#select-spec select')
   ].forEach(input => {
     const field = input;
-    field.value = "";
+    field.value = '';
   });
 };
 
 const canSaveTest = () => {
   if (extriesAreValid() === true) {
-    saveTestBtn.removeAttribute("disabled");
+    saveTestBtn.removeAttribute('disabled');
   } else {
-    saveTestBtn.setAttribute("disabled", true);
+    saveTestBtn.setAttribute('disabled', true);
   }
 
-  rAF({ wait: 2000 }).then(queue => queue(canSaveTest));
+  rAF({ wait: 2000 }).then(() => canSaveTest());
+  monitoringCanSaveTest = true;
 };
 
-const saveTest = details => {
-  const { id } = details;
-  details.slug = toSlug(`${details.name}-${details.cycle}`);
+const saveTest = d => {
+  const { id } = d;
+  const details = { ...d, ...{ slug: toSlug(`${d.name}-${d.cycle}`) } };
 
   if (id) {
     const changes = exceptId(details);
@@ -168,15 +173,15 @@ const saveTest = details => {
 
   return ASSESSMENTS.add({
     ...details,
-    status: "active",
+    status: 'active',
     createAt: Date.now()
   })
     .then(ref => {
       const key = ref.id;
       const publicKey = key
-        .split("")
+        .split('')
         .reverse()
-        .join("");
+        .join('');
 
       ASSESSMENTS.doc(key).update({ publicKey });
 
@@ -189,7 +194,7 @@ const fieldValueChanged = event => {
   const input = event.target;
   if (!input || !input.value) return;
 
-  const key = input.getAttribute("data-field");
+  const key = input.getAttribute('data-field');
   if (!key) return;
 
   const value = trim(input.value);
@@ -199,91 +204,97 @@ const fieldValueChanged = event => {
 const formatDate = datetime => {
   if (!assessment || !assessment.endingAt) return datetime;
 
-  const diff = dateTimeDiff(
-    new Date(datetime),
-    new Date(assessment.endingAt),
-    "hour"
-  );
-  const timeFormat = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  const diff = dateTimeDiff({
+    type: 'hour',
+    from: new Date(datetime).getTime(),
+    to: new Date(assessment.endingAt).getTime()
+  });
+
+  const timeFormat = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
   const part = timeFormat
-    .formatToParts(diff, "hour")
-    .find(p => p.type === "integer");
+    .formatToParts(diff, 'hour')
+    .find(p => p.type === 'integer');
 
   if (part) {
-    let formatStr = "";
+    let formatStr = '';
     const value = parseInt(part.value, 10);
-    if (value === 0) formatStr = `Just In Time`;
+    if (value === 0) formatStr = `The 11th Hour`;
 
     if (value >= 1) {
-      formatStr = `${value} ${value === 1 ? "Hour" : "Hours"} Upfront`;
+      formatStr = `${value} ${value === 1 ? 'Hour' : 'Hours'} Upfront`;
     }
     return formatStr;
   }
 
-  return timeFormat.format(diff, "hours");
+  return timeFormat.format(diff, 'hours');
 };
 
 const specsListItemTPL = specs => html`
-  ${
-    specs.map(
-      item => html`
-        <option value=${item.id} data-key=${item.id}> ${item.name} </option>
-      `
-    )
-  }
+  ${specs.map(
+    item => html`
+      <option value=${item.id} data-key=${item.id}> ${item.name} </option>
+    `
+  )}
 `;
 
 const perfGroupItemTPL = groups => html`
-  ${
-    groups.map(
-      item => html`
-        <option value=${item.value}> ${item.text} </option>
-      `
-    )
-  }
+  ${groups.map(
+    item => html`
+      <option value=${item.value}> ${item.text} </option>
+    `
+  )}
 `;
 
 const candidateListTPL = pool => html`
-  ${
-    pool.map(
-      item => html`
-        <tr>
-          <td>${item.email}</td>
-          <td class="align-center">
-            ${
-              item.completedChallenge >= 0
-                ? `Challenge ${item.completedChallenge + 1}`
-                : "Not A Single Challenge"
-            }
-          </td>
-          <td>${item.completedChallenge >= 0 && item.lastRun ? formatDate(item.lastRun) : ""}</td>
-        </tr>
-      `
-    )
-  }
+  ${pool.map(
+    item => html`
+      <tr>
+        <td>${item.email}</td>
+        <td class="align-center">
+          ${item.completedChallenge >= 0
+            ? `Challenge ${item.completedChallenge + 1}`
+            : 'Not A Single Challenge'}
+        </td>
+        <td>
+          ${item.completedChallenge >= 0
+            ? formatDate(item.lastRun)
+            : 'Not Applicable'}
+        </td>
+      </tr>
+    `
+  )}
 `;
 
 const getChartDataTPL = () => {
   return {
-    labels: ["Challenge 4", "Challenge 3", "Challenge 2", "Challenge 1", "Dropped Out", "Didn't Start"],
-    datasets: [{
-      label: "",
-      data: [],
-      borderWidth: 1
-    }]
+    labels: [
+      'Challenge 4',
+      'Challenge 3',
+      'Challenge 2',
+      'Challenge 1',
+      'Dropped Out',
+      "Didn't Start"
+    ],
+    datasets: [
+      {
+        label: '',
+        data: [],
+        borderWidth: 1
+      }
+    ]
   };
 };
 
 const initChart = () => {
-  const countCandidates = (theChart) => {
+  const countCandidates = theChart => {
     const sum = theChart.config.data.datasets[0].data.reduce((a, b) => {
       return !b ? a : a + b;
     }, 0);
     return `${sum}`;
   };
 
-  chart = new Chart(select("#chart"), {
-    type: "doughnut",
+  chart = new Chart(select('#chart'), {
+    type: 'doughnut',
     data: getChartDataTPL(),
     options: {
       plugins: {
@@ -291,18 +302,21 @@ const initChart = () => {
           scheme: 'office.Median6'
         },
         doughnutlabel: {
-          labels: [{
-            text: countCandidates,
-            font: {
-              size: '60'
+          labels: [
+            {
+              text: countCandidates,
+              font: {
+                size: '60'
+              },
+              color: 'grey'
             },
-            color: 'grey'
-          }, {
-            text: 'Candidtates',
-            font: {
-              size: '50'
+            {
+              text: 'Candidtates',
+              font: {
+                size: '50'
+              }
             }
-          }]
+          ]
         }
       }
     }
@@ -310,8 +324,8 @@ const initChart = () => {
 };
 
 const updateChart = data => {
-  chart.data.datasets.forEach((dataset) => {
-      dataset.data.push(data);
+  chart.data.datasets.forEach(dataset => {
+    dataset.data.push(data);
   });
   chart.update();
 };
@@ -342,50 +356,56 @@ const addAndPlotPerfEntries = (docs, candidateTable) => {
 
 const resetDataAndChart = () => {
   candidates = [];
-  if(!chart) initChart();
+  if (!chart) initChart();
   chart.data = getChartDataTPL();
   chart.update();
 
-  const candidateTable = select("[data-candidate-pool]");
+  const candidateTable = select('[data-candidate-pool]');
   render(candidateListTPL(candidates), candidateTable);
 };
 
 const computePerformanceMatrix = () => {
-  const candidateTable = select("[data-candidate-pool]");
+  const candidateTable = select('[data-candidate-pool]');
   render(candidateListTPL(candidates), candidateTable);
 
-  [stars(), levelUps(), highTryAgains(), lowTryAgains(), allOfThem()]
-  .forEach((result, index) => {
-    result.then(snapshot => {
-      if(index <= 3) {
-        addAndPlotPerfEntries(snapshot.docs, candidateTable);
-      } else if(index >= 4) {
+  [stars(), levelUps(), highTryAgains(), lowTryAgains(), allOfThem()].forEach(
+    (result, index) => {
+      result.then(snapshot => {
+        if (index <= 3) {
+          addAndPlotPerfEntries(snapshot.docs, candidateTable);
+        } else if (index >= 4) {
+          const [notStarted, dropOuts] = snapshot.docs.reduce(
+            (sink, d) => {
+              const { started, completedChallenge } = d.data();
+              if (!started) sink[0].push(d);
+              if (
+                started &&
+                (completedChallenge === undefined || completedChallenge === -1)
+              ) { sink[1].push(d); }
 
-        const [notStarted, dropOuts] = snapshot.docs.reduce((sink, d) => {
-          const {started, completedChallenge} = d.data();
-          if(!started) sink[0].push(d);
-          if(started && completedChallenge === undefined) sink[1].push(d);
+              return sink;
+            },
+            [[], []]
+          );
 
-          return sink;
-        }, [[], []]);
-
-        addAndPlotPerfEntries(dropOuts, candidateTable);
-        addAndPlotPerfEntries(notStarted, candidateTable);
-      }
-    });
-  });
+          addAndPlotPerfEntries(dropOuts, candidateTable);
+          addAndPlotPerfEntries(notStarted, candidateTable);
+        }
+      });
+    }
+  );
 
   getChallengeCount().then(challengeCount => {
-    const perfSelector = select("[data-candidate-perfs] select");
+    const perfSelector = select('[data-candidate-perfs] select');
     const perfGroups = Array.from({ length: challengeCount }, (item, index) => {
       return { value: index, text: `Complete Challenge ${index + 1}` };
     });
 
     const allPerfGroups = [
-      { value: "all", text: "All Entries" },
-      { value: "allstars", text: "Completed Top 2 Challenges" },
+      { value: 'all', text: 'All Entries' },
+      { value: 'allstars', text: 'Completed Top 2 Challenges' },
       ...perfGroups.reverse(),
-      { value: "bailers", text: "Bailers" }
+      { value: 'bailers', text: 'Bailers' }
     ];
 
     render(perfGroupItemTPL(allPerfGroups), perfSelector);
@@ -394,11 +414,11 @@ const computePerformanceMatrix = () => {
 };
 
 const findCandidatesByPerf = perf => {
-  if (!perf || perf === "all") return candidates.slice();
+  if (!perf || perf === 'all') return candidates.slice();
 
   const spec = specifications.find(s => s.id === assessment.spec);
 
-  if (perf === "allstars" && spec) {
+  if (perf === 'allstars' && spec) {
     const challenges = Array.from(
       { length: spec.challenges.length },
       (x, i) => i
@@ -409,10 +429,8 @@ const findCandidatesByPerf = perf => {
       .filter(e => [last, penultimate].includes(e.completedChallenge));
   }
 
-  if(perf === 'bailers') {
-    return candidates
-      .slice()
-      .filter(e => !e.started);
+  if (perf === 'bailers') {
+    return candidates.slice().filter(e => !e.started);
   }
 
   return candidates
@@ -422,24 +440,24 @@ const findCandidatesByPerf = perf => {
 
 const filterCandidatesByPerf = value => {
   const filtered = findCandidatesByPerf(value);
-  render(candidateListTPL(filtered), select("[data-candidate-pool]"));
+  render(candidateListTPL(filtered), select('[data-candidate-pool]'));
 };
 
 const handleExport = () => {
-  const {slug} = assessment;
-  const forExport = select("[data-candidate-perfs] select").value;
+  const { slug } = assessment;
+  const forExport = select('[data-candidate-perfs] select').value;
   const data = findCandidatesByPerf(forExport);
-  const csvContent = ["data:text/csv;charset=utf-8,"];
+  const csvContent = ['data:text/csv;charset=utf-8,'];
 
   data
-    .map(({email, lastRun, started, completedChallenge}) => {
+    .map(({ email, lastRun, started, completedChallenge }) => {
       let submitted = '';
       let performance = '';
-      if(!started) {
+      if (!started) {
         performance = `Didn't Start`;
-      } else if(started && completedChallenge === undefined) {
+      } else if (started && completedChallenge === undefined) {
         performance = `Dropped Out`;
-      } else if(started && completedChallenge >= 0) {
+      } else if (started && completedChallenge >= 0) {
         performance = `${completedChallenge + 1}`;
         submitted = lastRun ? `${formatDate(lastRun)}` : 'Not Once';
       }
@@ -447,7 +465,7 @@ const handleExport = () => {
       return [email, performance, submitted, slug];
     })
     .forEach(entry => {
-      const row = entry.join(",");
+      const row = entry.join(',');
       csvContent.push(`${row} \r\n`);
     });
 
@@ -456,19 +474,19 @@ const handleExport = () => {
 
 const attemptDisplayAssessmentAdminUI = () => {
   select(`[data-view='create-edit-test']`).removeAttribute(
-    "data-test-hasentries"
+    'data-test-hasentries'
   );
 
   doesAssessmentHaveSubmissions().then(hasSubmissions => {
     if (hasSubmissions !== true) {
       select(`[data-view='create-edit-test']`).removeAttribute(
-        "data-test-hasentries"
+        'data-test-hasentries'
       );
       return;
     }
 
     select(`[data-view='create-edit-test']`).setAttribute(
-      "data-test-hasentries",
+      'data-test-hasentries',
       true
     );
 
@@ -478,37 +496,40 @@ const attemptDisplayAssessmentAdminUI = () => {
 };
 
 const buildUI = ({ mode }) => {
+  const hasEntries = select('[data-test-hasentries]');
+  if(hasEntries) hasEntries.removeAttribute('data-test-hasentries');
+  
   if (builtUI === true) return;
 
   const viewTitle = select(`[data-view='create-edit-test'] [data-view-title]`);
   viewTitle.textContent =
-    mode === "create" ? "Create Assessment" : "Manage Assessment";
+    mode === 'create' ? 'Create Assessment' : 'Manage Assessment';
 
-  mdc.textField.MDCTextField.attachTo(select("#testname-field"));
-  mdc.textField.MDCTextField.attachTo(select("#testcycle-field"));
-  mdc.textField.MDCTextField.attachTo(select("#from-date-field"));
-  mdc.textField.MDCTextField.attachTo(select("#to-date-field"));
+  mdc.textField.MDCTextField.attachTo(select('#testname-field'));
+  mdc.textField.MDCTextField.attachTo(select('#testcycle-field'));
+  mdc.textField.MDCTextField.attachTo(select('#from-date-field'));
+  mdc.textField.MDCTextField.attachTo(select('#to-date-field'));
 
   [
-    select("#testname-field input"),
-    select("#testcycle-field input"),
-    select("#from-date-field input"),
-    select("#to-date-field input")
+    select('#testname-field input'),
+    select('#testcycle-field input'),
+    select('#from-date-field input'),
+    select('#to-date-field input')
   ].forEach(input => {
-    input.addEventListener("blur", fieldValueChanged);
+    input.addEventListener('blur', fieldValueChanged);
   });
 
-  mdc.select.MDCSelect.attachTo(select("[data-candidate-perfs]"));
+  mdc.select.MDCSelect.attachTo(select('[data-candidate-perfs]'));
   const selectCandidatePerfs = new mdc.select.MDCSelect(
-    select("[data-candidate-perfs].mdc-select")
+    select('[data-candidate-perfs].mdc-select')
   );
-  selectCandidatePerfs.listen("MDCSelect:change", () => {
+  selectCandidatePerfs.listen('MDCSelect:change', () => {
     filterCandidatesByPerf(selectCandidatePerfs.value);
   });
 
-  select(`button[data-export]`).addEventListener("click", handleExport);
+  select(`button[data-export]`).addEventListener('click', handleExport);
 
-  saveTestBtn.addEventListener("click", () => {
+  saveTestBtn.addEventListener('click', () => {
     saveTest(assessment).then(updated => {
       setAssessmentObject({
         id: updated.id,
@@ -517,16 +538,15 @@ const buildUI = ({ mode }) => {
     });
   });
 
-  extractTestIDBtn.addEventListener("click", () => {
+  extractTestIDBtn.addEventListener('click', () => {
     if (!assessment || !assessment.id) return;
 
-    // TODO copy assessment ID to clipboard
-    const textArea = document.createElement("textarea");
-    textArea.setAttribute("id", "test-id-copyr");
+    const textArea = document.createElement('textarea');
+    textArea.setAttribute('id', 'test-id-copyr');
     textArea.value = `https://alc-dev-toolkit-d50fe.firebaseapp.com/${getAssessmentPublicKey()}`;
     document.body.appendChild(textArea);
     textArea.select();
-    document.execCommand("Copy");
+    document.execCommand('Copy');
     textArea.remove();
   });
 
@@ -535,7 +555,7 @@ const buildUI = ({ mode }) => {
       snapshot.forEach(doc => {
         const data = doc.data();
         const { status, name, challenges } = data;
-        if (status !== "archived") {
+        if (status !== 'archived') {
           specifications.push({
             id: doc.id,
             name,
@@ -544,30 +564,32 @@ const buildUI = ({ mode }) => {
         }
       });
 
-      render(specsListItemTPL(specifications), select("#select-spec select"));
+      render(specsListItemTPL(specifications), select('#select-spec select'));
 
       rAF({ wait: 1200 }).then(() => {
-        const mdcSelect = select("#select-spec");
-        const combo = mdcSelect.querySelector("select");
+        const mdcSelect = select('#select-spec');
+        const combo = mdcSelect.querySelector('select');
 
-        const first = document.createElement("option");
-        first.setAttribute("disabled", "disabled");
-        first.textContent = "Choose Option";
-        combo.insertBefore(first, combo.querySelector("option"));
+        const first = document.createElement('option');
+        first.setAttribute('disabled', 'disabled');
+        first.textContent = 'Choose Option';
+        combo.insertBefore(first, combo.querySelector('option'));
 
         const options = combo.querySelectorAll('option');
-        const specOption = [...options].find(opt => opt.value === assessment.spec);
+        const specOption = [...options].find(
+          opt => opt.value === assessment.spec
+        );
 
         if (specOption) {
-          specOption.setAttribute("selected", "selected");
+          specOption.setAttribute('selected', 'selected');
         } else {
-          first.setAttribute("selected", "selected");
+          first.setAttribute('selected', 'selected');
         }
 
         // const selectSpec = new MDCSelect(mdcSelect);
         mdc.select.MDCSelect.attachTo(mdcSelect);
         const selectSpec = new mdc.select.MDCSelect(mdcSelect);
-        selectSpec.listen("MDCSelect:change", () => {
+        selectSpec.listen('MDCSelect:change', () => {
           if (!selectSpec.value) return;
           assessment.spec = selectSpec.value;
         });
@@ -580,21 +602,23 @@ const buildUI = ({ mode }) => {
 
 const adminWillCreateTest = () => {
   setAssessmentObject({});
-  buildUI({ mode: "create" });
+  buildUI({ mode: 'create' });
   clearInputValues();
 
-  goTo("create-edit-test", {}, "!#create-edit-test");
-  rAF().then(queue => queue(canSaveTest));
+  goTo('create-edit-test', {}, '!#create-edit-test');
+  if(monitoringCanSaveTest === true) return;
+
+  rAF().then(() => canSaveTest());
 };
 
 const manageATest = event => {
-  const itemEl = event.target.closest(".mdc-card");
+  const itemEl = event.target.closest('.mdc-card');
   if (!itemEl) return;
 
-  const id = itemEl.getAttribute("data-key");
+  const id = itemEl.getAttribute('data-key');
   if (!id) return;
 
-  buildUI({ mode: "manage" });
+  buildUI({ mode: 'manage' });
   clearInputValues();
   resetDataAndChart();
 
@@ -607,13 +631,13 @@ const manageATest = event => {
       });
 
       [
-        select("#testname-io"),
-        select("#testcycle-io"),
-        select("#from-date"),
-        select("#to-date"),
-        select("#select-spec select")
+        select('#testname-io'),
+        select('#testcycle-io'),
+        select('#from-date'),
+        select('#to-date'),
+        select('#select-spec select')
       ].forEach(field => {
-        const key = field.getAttribute("data-field");
+        const key = field.getAttribute('data-field');
         if (key && assessment[key]) {
           field.value = assessment[key];
         }
@@ -633,30 +657,31 @@ const manageATest = event => {
       // });
     });
 
-  goTo("create-edit-test", { id }, "!#create-edit-test");
+  goTo('create-edit-test', { id }, '!#create-edit-test');
+  if(monitoringCanSaveTest === true) return;
+  
+  rAF().then(() => canSaveTest());
 };
 
 const testsListItemTPL = specs => html`
-  ${
-    specs.map(
-      item => html`
-        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-2">
-          <div
-            class="mdc-card text-only"
-            data-key=${item.id}
-            @click=${manageATest}
-          >
-            <div class="mdc-card__primary-action" tabindex="0">
-              <h2 class="mdc-typography--headline6">
-                ${item.name} ${item.cycle}
-              </h2>
-              <div class="mdc-typography--body2"></div>
-            </div>
+  ${specs.map(
+    item => html`
+      <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-2">
+        <div
+          class="mdc-card text-only"
+          data-key=${item.id}
+          @click=${manageATest}
+        >
+          <div class="mdc-card__primary-action" tabindex="0">
+            <h2 class="mdc-typography--headline6">
+              ${item.name} ${item.cycle}
+            </h2>
+            <div class="mdc-typography--body2"></div>
           </div>
         </div>
-      `
-    )
-  }
+      </div>
+    `
+  )}
 `;
 
 export const adminWillViewTests = () => {
@@ -666,7 +691,7 @@ export const adminWillViewTests = () => {
       snapshot.forEach(doc => {
         const data = doc.data();
         const { status } = data;
-        if (status !== "archived") {
+        if (status !== 'archived') {
           tests.push({
             id: doc.id,
             ...data
@@ -677,30 +702,30 @@ export const adminWillViewTests = () => {
     })
     .catch(console.warn);
 
-  goTo("assessments", {}, "!#assessments");
+  goTo('assessments', {}, '!#assessments');
 
   [...selectAll('.mdc-chip-set')].forEach(chip => {
     mdc.chips.MDCChip.attachTo(chip);
   });
-  select("[data-action=add-test]").addEventListener(
-    "click",
+  select('[data-action=add-test]').addEventListener(
+    'click',
     adminWillCreateTest
   );
 };
 
 export default { adminWillViewTests };
 
-  // SUBMISSIONS
-  // .where('email', '==', 'chaluwa@gmail.com')
-  //   .where('assessment', '==', 'JrXPFe38onUOUkl1gUHN') 
-  //   .get()
-  //   .then(snapshot => {
-  //     if(snapshot.empty === false) {
-  //       snapshot.docs.forEach(doc => {
-  //         // console.log(doc.data().code);
-  //         // SUBMISSIONS.doc(doc.id).delete().then(() => {
-  //         //   console.log('deleted entry');
-  //         // });
-  //       });
-  //     } 
-  //   }); 
+// SUBMISSIONS
+// .where('email', '==', 'chaluwa@gmail.com')
+//   .where('assessment', '==', 'JrXPFe38onUOUkl1gUHN')
+//   .get()
+//   .then(snapshot => {
+//     if(snapshot.empty === false) {
+//       snapshot.docs.forEach(doc => {
+//         // console.log(doc.data().code);
+//         // SUBMISSIONS.doc(doc.id).delete().then(() => {
+//         //   console.log('deleted entry');
+//         // });
+//       });
+//     }
+//   });

@@ -29,6 +29,19 @@ const specNameField = select("#specname-field");
 const specAboutField = select("#specabout-field");
 const challengeListEl = select("#challenge-list");
 
+const switchDetailsTo = attr => {
+  const node = select(`[${attr}]`);
+  if(!node) return;
+
+  if(node.getAttribute(`${attr}`) !== 'active') {
+    [...selectAll(`[data-details-item]`)].forEach(item => {
+      item.setAttribute('data-details-item', 'off');
+    });
+  }
+
+  node.setAttribute('data-details-item', 'active');
+};
+
 const selectAChallenge = event => {
   const item = event.target.closest("li");
   if (!item) return;
@@ -128,19 +141,6 @@ const specNameChanged = event => {
 
 const specAboutChanged = event => {
   spec.about = event.target.value;
-};
-
-const switchDetailsTo = attr => {
-  const node = select(`[${attr}]`);
-  if(!node) return;
-
-  if(node.getAttribute(`${attr}`) !== 'active') {
-    [...selectAll(`[data-details-item]`)].forEach(item => {
-      item.setAttribute('data-details-item', 'off');
-    });
-  }
-
-  node.setAttribute('data-details-item', 'active');
 };
 
 const addAChallenge = () => {

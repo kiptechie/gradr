@@ -208,8 +208,10 @@ body[data-nav=assessments] .mdc-card.text-only:hover {
   margin-bottom: 1.5em;
 }
 
-[data-assessment-admin] button[data-export-stars] {
-  margin-top: 1.1em;
+[data-assessment-admin] button[data-export] {
+  margin-top: 1.2em;
+  border: 1px solid #999;
+  border-radius: 50%;
 }
 
 [data-assessment-admin] table {
