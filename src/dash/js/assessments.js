@@ -265,13 +265,12 @@ const candidateListTPL = pool => html`
   )}
 `;
 
-const getChartDataTPL = () => {
-  return {
+const getChartDataTPL = () => ({
     labels: [
-      'Challenge 4',
-      'Challenge 3',
-      'Challenge 2',
-      'Challenge 1',
+      'Completed Challenge 4',
+      'Completed Challenge 3',
+      'Completed Challenge 2',
+      'Completed Challenge 1',
       'Dropped Out',
       "Didn't Start"
     ],
@@ -282,8 +281,7 @@ const getChartDataTPL = () => {
         borderWidth: 1
       }
     ]
-  };
-};
+  });
 
 const initChart = () => {
   const countCandidates = theChart => {
