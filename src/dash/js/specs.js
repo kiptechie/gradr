@@ -105,6 +105,10 @@ const clearInputValues = () => {
   render(challengeListItemTPL([]), challengeListEl);
 
   select(".mdc-select__selected-text").innerHTML="";
+  const instructionsTemplate = select("[data-manage-challenge-instructions]");
+  if (instructionsTemplate) {
+    instructionsTemplate.setAttribute('data-details-item', 'off');
+  };
 
   [
     select("#specname-field input"),
