@@ -173,6 +173,7 @@ body[data-assessment] header.mdc-top-app-bar--short-collapsed button {
   height: 50px;
   top: 0.2em;
   right: 1em;
+  border-radius: 50%;
 }
 
 /* Style The Challenge Instructions */
@@ -293,6 +294,7 @@ body[data-nav='playground'] [data-profile] {
   position: fixed;
   top: 0.2em;
   right: 1em;
+  border-radius: 50%;
 }
 
 body[data-nav='playground'] [data-timer] {
