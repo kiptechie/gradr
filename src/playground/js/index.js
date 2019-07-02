@@ -66,17 +66,21 @@ const setupSignIn = () => {
 };
 
 const fetchImpliedAssessment = () => {
-  notify('Still busy, please wait ...');
-  const assessmentId = testId
-    .split('')
-    .reverse()
-    .join('');
+  try {
+    notify('Still busy, please wait ...');
+    const assessmentId = testId
+      .split('')
+      .reverse()
+      .join('');
 
-  return firebase
-    .firestore()
-    .collection('assessments')
-    .doc(assessmentId)
-    .get();
+    return firebase
+      .firestore()
+      .collection('assessments')
+      .doc(assessmentId)
+      .get();
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const assessmentIsLive = (assessmentDoc) => {
@@ -97,9 +101,9 @@ const enterPlayground = async (assessmentDoc) => {
   playground.enter({ user: appUser, test: testId, assessmentDoc});
 };
 
-const enterHome = (testId) => {
+const enterHome = (assessmentId) => {
   // select('body').removeAttribute('data-auth');
-  goTo('home', { test: testId });
+  goTo('home', { test: assessmentId });
 };
 
 const initServiceBot = () => loadStylesAndScripts('/engines/service-bot.js');
