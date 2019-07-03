@@ -148,6 +148,20 @@ const clearInputValues = () => {
   });
 };
 
+const searchByEmail = () => {
+  const email_input = select('.email-search-input')
+  const candidateTable = select('[data-candidate-pool]');
+  email_input.addEventListener('keyup', ()=>{
+    let available_users = [];
+     candidates.forEach(candidate => {
+      if(candidate.email.indexOf(email_input.value.toLowerCase()) > -1){
+            available_users.push(candidate);
+            render(candidateListTPL(available_users), candidateTable);
+          }
+        })
+  });
+};
+
 const canSaveTest = () => {
   if (extriesAreValid() === true) {
     saveTestBtn.removeAttribute('disabled');
@@ -526,6 +540,8 @@ const buildUI = ({ mode }) => {
   });
 
   select(`button[data-export]`).addEventListener('click', handleExport);
+  
+  mode == 'manage' ? searchByEmail() : null;
 
   saveTestBtn.addEventListener('click', () => {
     saveTest(assessment).then(updated => {
@@ -682,6 +698,7 @@ const testsListItemTPL = specs => html`
   )}
 `;
 
+
 export const adminWillViewTests = () => {
   ASSESSMENTS.get()
     .then(snapshot => {
@@ -712,18 +729,3 @@ export const adminWillViewTests = () => {
 };
 
 export default { adminWillViewTests };
-
-// SUBMISSIONS
-// .where('email', '==', 'chaluwa@gmail.com')
-//   .where('assessment', '==', 'JrXPFe38onUOUkl1gUHN')
-//   .get()
-//   .then(snapshot => {
-//     if(snapshot.empty === false) {
-//       snapshot.docs.forEach(doc => {
-//         // console.log(doc.data().code);
-//         // SUBMISSIONS.doc(doc.id).delete().then(() => {
-//         //   console.log('deleted entry');
-//         // });
-//       });
-//     }
-//   });
