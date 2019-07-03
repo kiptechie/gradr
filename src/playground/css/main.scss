@@ -167,6 +167,15 @@ body[data-assessment] header.mdc-top-app-bar--short-collapsed button {
   min-height: 100%;
 }
 
+.mdc-icon-button img {
+  position: fixed;
+  width: 50px;
+  height: 50px;
+  top: 0.2em;
+  right: 1em;
+  border-radius: 50%;
+}
+
 /* Style The Challenge Instructions */
 
 #instructions [data-task-title] {
@@ -285,6 +294,7 @@ body[data-nav='playground'] [data-profile] {
   position: fixed;
   top: 0.2em;
   right: 1em;
+  border-radius: 50%;
 }
 
 body[data-nav='playground'] [data-timer] {
