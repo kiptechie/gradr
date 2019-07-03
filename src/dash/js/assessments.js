@@ -21,6 +21,7 @@ let chart;
 let builtUI = false;
 let assessment = {};
 let candidates = [];
+let candidatesStatus = 'Completed NONE';
 
 let monitoringCanSaveTest = false;
 
@@ -40,9 +41,22 @@ const getAssessmentPublicKey = () =>
     .reverse()
     .join('');
 
+/**
+ * @description this checks whether an assessment is ongoing or not
+ * and sets the value of the global variable called "candidatesStatus"
+ * 
+ * @param { object } theAssessment
+ */
+const droppedOutOrCompletedNone = (theAssessment) => {
+  if (theAssessment && theAssessment.endingAt) {
+    const secondsToGo = Date.parse(theAssessment.endingAt) - Date.parse(new Date());
+    candidatesStatus = secondsToGo < 0 ? "Dropped Out" : "Completed NONE";
+  }
+};
+    
 const setAssessmentObject = (obj = {}) => {
+  droppedOutOrCompletedNone(obj);
   assessment = obj;
-
   if (obj.id) {
     extractTestIDBtn.removeAttribute('disabled');
   } else {
@@ -125,8 +139,7 @@ const doesAssessmentHaveSubmissions = () =>
   });
 
 const extriesAreValid = () => {
-  const { name, cycle, startingAt, endingAt } = assessment;
-
+  const { name, slug, cycle, startingAt, endingAt } = assessment;
   return (
     trim(name) !== '' &&
     trim(cycle) !== '' &&
@@ -285,8 +298,8 @@ const getChartDataTPL = () => ({
       'Completed Challenge 3',
       'Completed Challenge 2',
       'Completed Challenge 1',
-      'Dropped Out',
-      "Didn't Start"
+      candidatesStatus,
+      'Didn\'t Start'
     ],
     datasets: [
       {
@@ -323,7 +336,7 @@ const initChart = () => {
               color: 'grey'
             },
             {
-              text: 'Candidtates',
+              text: 'Candidates',
               font: {
                 size: '50'
               }
@@ -634,7 +647,6 @@ const manageATest = event => {
 
   buildUI({ mode: 'manage' });
   clearInputValues();
-  resetDataAndChart();
 
   ASSESSMENTS.doc(id)
     .get()
@@ -643,6 +655,7 @@ const manageATest = event => {
         id: doc.id,
         ...doc.data()
       });
+      resetDataAndChart();
 
       [
         select('#testname-io'),
