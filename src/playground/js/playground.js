@@ -70,7 +70,9 @@ const setupAccount = () => {
   const usrMenu = mdc.menu.MDCMenu.attachTo(select('.mdc-menu'));
   userIconBtn.addEventListener('click', event => {
     event.preventDefault();
-    usrMenu.open = true;
+    if (!usrMenu.open) {
+      usrMenu.open = true;
+    }
   });
   usrMenu.setFixedPosition(true);
   select('#signout').addEventListener('click', signOut);

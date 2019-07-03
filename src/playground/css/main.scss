@@ -216,7 +216,7 @@ body[data-assessment] #instructions [data-challenge-info-wrap] {
 #viewer {
   position: absolute;
   top: 65px;
-  left: 50%;
+  left: 40%;
   opacity: 0;
   height: 878px;
   width: 523px;
@@ -326,5 +326,13 @@ body[data-nav='playground'] #launcher-svg-container.km-chat-icon-sidebox {
 body[data-nav='playground'] #launcher-svg-container.km-chat-icon-sidebox img {
   width: 70%;
 }
-
+.mdc-menu .mdc-list {
+  padding-bottom: 0px;
+  padding-top: 0px;
+}
+.signout-btn {
+  left: 93% !important;
+  top: 60px !important;
+  min-width: 90px;
+}
 /* End Playground */
