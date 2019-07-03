@@ -27,6 +27,7 @@ const specsListEl = select("#specs-list");
 const saveSpecBtn = select(`[data-action='save-spec']`);
 const specNameField = select("#specname-field");
 const specAboutField = select("#specabout-field");
+const specDifficultyField = select("#specdifficulty-field")
 const challengeListEl = select("#challenge-list");
 
 const switchDetailsTo = attr => {
@@ -85,6 +86,7 @@ const extriesAreValid = () =>
   spec &&
   trim(spec.name) !== "" &&
   trim(spec.about) !== "" &&
+  spec.difficulty !== undefined &&
   Array.isArray(spec.challenges);
 
 const canSaveSpec = () => {
@@ -101,6 +103,12 @@ const clearInputValues = () => {
   spec = {};
   if(instructionsEditor) instructionsEditor.setValue("");
   render(challengeListItemTPL([]), challengeListEl);
+
+  select(".mdc-select__selected-text").innerHTML="";
+  const instructionsTemplate = select("[data-manage-challenge-instructions]");
+  if (instructionsTemplate) {
+    instructionsTemplate.setAttribute('data-details-item', 'off');
+  };
 
   [
     select("#specname-field input"),
@@ -141,6 +149,11 @@ const specNameChanged = event => {
 
 const specAboutChanged = event => {
   spec.about = event.target.value;
+};
+
+const specDifficultyChanged = event => {
+  const target = event.currentTarget.querySelector('input');
+  spec.difficulty = target.value;
 };
 
 const addAChallenge = () => {
@@ -236,6 +249,10 @@ const buildUI = mode => {
     .querySelector("input")
     .addEventListener("blur", specAboutChanged);
 
+  mdc.select.MDCSelect.attachTo(specDifficultyField);
+  specDifficultyField
+    .addEventListener("MDCSelect:change", specDifficultyChanged);
+
   mdc.list.MDCList.attachTo(challengeListEl);
   const challengeList = new mdc.list.MDCList.attachTo(challengeListEl);
   challengeList.singleSelection = true;
@@ -312,6 +329,24 @@ const adminWillCreateSpec = () => {
   rAF().then(queue => queue(canSaveSpec));
 };
 
+const manageDifficultySelection = (difficulty) => {
+  const selectedTextNodes = [...selectAll(".specdifficulty-ul .mdc-list-item--selected")];
+  const difficultyInput = specDifficultyField.querySelector("input");
+  const difficultyOption = select(`[data-value=${difficulty}]`);
+  const selectedText = specDifficultyField.querySelector(".mdc-select__selected-text");
+
+  selectedTextNodes
+  .map(
+    node => node.classList.remove('mdc-list-item--selected')
+  );
+
+  difficultyInput.value = difficulty;
+  difficultyOption.classList.add('mdc-list-item--selected');
+  difficultyOption.setAttribute('aria-selected', 'true');
+  selectedText.innerHTML = `${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}`;
+  selectedText.focus()
+}
+
 const manageASpec = event => {
   const itemEl = event.target.closest(".mdc-card");
   if (!itemEl) return;
@@ -334,6 +369,10 @@ const manageASpec = event => {
       const aboutInput = specAboutField.querySelector("input");
       aboutInput.value = spec.about || '';
       aboutInput.focus();
+
+      let difficulty = "beginner";
+      if (spec.difficulty) ({ difficulty } = spec);
+      manageDifficultySelection(difficulty);
 
       render(challengeListItemTPL(spec.challenges), challengeListEl);
       challengeListEl.querySelector("li").click();
