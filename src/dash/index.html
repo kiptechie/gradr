@@ -25,14 +25,16 @@
           alt="Assessments">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path d="M0 0h24v24H0z" fill="none" />
-            <path
+            <path class="shape"
+              fill="#fff"
               d="M12.45 16h2.09L9.43 3H7.57L2.46 16h2.09l1.12-3h5.64l1.14 3zm-6.02-5L8.5 5.48 10.57 11H6.43zm15.16.59l-8.09 8.09L9.83 16l-1.41 1.41 5.09 5.09L23 13l-1.41-1.41z" />
           </svg>
         </a>
         <a data-action="tospecs" class="material-icons mdc-top-app-bar__action-item" aria-label="Specs" alt="Specs"><svg
             xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path d="M0 0h24v24H0z" fill="none" />
-            <path
+            <path class="shape"
+              fill="#fff"
               d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
             </svg></a>
       </section>
@@ -68,6 +70,16 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div data-view="dash">
+        <div class="mdc-layout-grid">
+            <div class="mdc-layout-grid__inner">
+              <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12">
+                  
+              </div>
+            </div>
+          </div>
     </div>
 
     <div data-view="specs">
@@ -343,7 +355,6 @@
 
           <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-6">
             <div id="stats" data-assessment-hasentries>
-              <!-- <div class="ct-chart ct-perfect-fourth"></div> -->
               <canvas id="chart" width="400" height="400"></canvas>
             </div>
           </div>
@@ -373,7 +384,6 @@
                 <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-5">
                     <div class="mdc-text-field mdc-text-field--no-label email-search">
                         <input type="text" class="mdc-text-field__input email-search-input" placeholder="Search by email" aria-label="Label">
-                        <span><img src="./images/search.png" class="search-icon"></span>
                         <div class="mdc-line-ripple"></div>
                       </div>
                 </div>

@@ -106,16 +106,19 @@ const initServiceBot = () => loadStylesAndScripts('/engines/service-bot.js');
 
 const bootstrapAssessment = async (user) => {
   appUser = user;
+  let assessmentDoc;
 
-  const assessmentDoc = await fetchImpliedAssessment();
-  if(!assessmentDoc || !assessmentDoc.exists) {
-    notify(invalidURLMsg);
-    return;
+  try {
+    assessmentDoc = await fetchImpliedAssessment();
+  } catch (error) {
+    // TODO log this error
+    notify('Unable to load your assessment, please retry.');
   }
 
-  if(assessmentIsLive(assessmentDoc)) {
+  if(assessmentDoc && assessmentDoc.exists && assessmentIsLive(assessmentDoc)) {
     await enterPlayground(assessmentDoc);
-    // initServiceBot();
+  } else {
+    notify(invalidURLMsg);
   }
 };
 

@@ -60,13 +60,15 @@ const signOut = event => {
 };
 
 const setupAccount = () => {
+  const userIconBtn = select('button[data-profile]');
   if(appUser.photoURL) {
     const img = document.createElement("img");
     img.src = appUser.photoURL;
-    const src = document.getElementById("photo");
-    src.appendChild(img);
+    userIconBtn.appendChild(img);
+
+    userIconBtn.classList.add('has-usr-photo');
   }
-  const userIconBtn = select('button[data-profile]');
+  
   const usrMenu = mdc.menu.MDCMenu.attachTo(select('.mdc-menu'));
   userIconBtn.addEventListener('click', event => {
     event.preventDefault();

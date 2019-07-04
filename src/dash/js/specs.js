@@ -1,7 +1,7 @@
-import firebase from "firebase/app";
+import firebase from 'firebase/app';
 
 import marked from 'marked';
-import { html, render } from "lit-html";
+import { html, render } from 'lit-html';
 import emmet from '@emmetio/codemirror-plugin';
 
 import {
@@ -13,7 +13,7 @@ import {
   loadCodemirrorAssets,
   trim,
   exceptId
-} from "../../commons/js/utils.js";
+} from '../../commons/js/utils.js';
 
 let spec;
 let builtUI = false;
@@ -21,20 +21,20 @@ let starterEditor;
 let instructionsEditor;
 let activeChallengeIndex = -1;
 
-const SPECS = firebase.firestore().collection("specs");
+const SPECS = firebase.firestore().collection('specs');
 
-const specsListEl = select("#specs-list");
+const specsListEl = select('#specs-list');
 const saveSpecBtn = select(`[data-action='save-spec']`);
-const specNameField = select("#specname-field");
-const specAboutField = select("#specabout-field");
-const specDifficultyField = select("#specdifficulty-field")
-const challengeListEl = select("#challenge-list");
+const specNameField = select('#specname-field');
+const specAboutField = select('#specabout-field');
+const specDifficultyField = select('#specdifficulty-field');
+const challengeListEl = select('#challenge-list');
 
 const switchDetailsTo = attr => {
   const node = select(`[${attr}]`);
-  if(!node) return;
+  if (!node) return;
 
-  if(node.getAttribute(`${attr}`) !== 'active') {
+  if (node.getAttribute(`${attr}`) !== 'active') {
     [...selectAll(`[data-details-item]`)].forEach(item => {
       item.setAttribute('data-details-item', 'off');
     });
@@ -44,10 +44,10 @@ const switchDetailsTo = attr => {
 };
 
 const selectAChallenge = event => {
-  const item = event.target.closest("li");
+  const item = event.target.closest('li');
   if (!item) return;
 
-  const pos = item.getAttribute("data-item-index");
+  const pos = item.getAttribute('data-item-index');
   const challenge = spec.challenges[pos];
   if (!challenge) return;
 
@@ -60,63 +60,60 @@ const selectAChallenge = event => {
 
 const challengeListItemTPL = challenges => {
   return html`
-    ${
-      challenges.map(
-        (item, index) => html`
-          <li
-            class="mdc-list-item"
-            tabindex="0"
-            @click=${selectAChallenge}
-            data-item-index=${index}
-          >
-            <span class="mdc-list-item__text">
-              <span class="mdc-list-item__primary-text">${item.title}</span>
-              <span class="mdc-list-item__secondary-text"
-                >Challenge <span class="ch-index">${index + 1}</span></span
-              >
-            </span>
-          </li>
-        `
-      )
-    }
+    ${challenges.map(
+      (item, index) => html`
+        <li
+          class="mdc-list-item"
+          tabindex="0"
+          @click=${selectAChallenge}
+          data-item-index=${index}
+        >
+          <span class="mdc-list-item__text">
+            <span class="mdc-list-item__primary-text">${item.title}</span>
+            <span class="mdc-list-item__secondary-text"
+              >Challenge <span class="ch-index">${index + 1}</span></span
+            >
+          </span>
+        </li>
+      `
+    )}
   `;
 };
 
 const extriesAreValid = () =>
   spec &&
-  trim(spec.name) !== "" &&
-  trim(spec.about) !== "" &&
+  trim(spec.name) !== '' &&
+  trim(spec.about) !== '' &&
   spec.difficulty !== undefined &&
   Array.isArray(spec.challenges);
 
 const canSaveSpec = () => {
   if (extriesAreValid() === true) {
-    saveSpecBtn.removeAttribute("disabled");
+    saveSpecBtn.removeAttribute('disabled');
   } else {
-    saveSpecBtn.setAttribute("disabled", true);
+    saveSpecBtn.setAttribute('disabled', true);
   }
 
-  rAF({ wait: 2000 }).then(queue => queue(canSaveSpec));
+  rAF({ wait: 2000 }).then(() => canSaveSpec());
 };
 
 const clearInputValues = () => {
   spec = {};
-  if(instructionsEditor) instructionsEditor.setValue("");
+  if (instructionsEditor) instructionsEditor.setValue('');
   render(challengeListItemTPL([]), challengeListEl);
 
-  select(".mdc-select__selected-text").innerHTML="";
-  const instructionsTemplate = select("[data-manage-challenge-instructions]");
+  select('.mdc-select__selected-text').innerHTML = '';
+  const instructionsTemplate = select('[data-manage-challenge-instructions]');
   if (instructionsTemplate) {
     instructionsTemplate.setAttribute('data-details-item', 'off');
-  };
+  }
 
-  [
-    select("#specname-field input"),
-    select("#specabout-field input")
-  ].forEach(input => {
-    const field = input;
-    field.value = "";
-  });
+  [select('#specname-field input'), select('#specabout-field input')].forEach(
+    input => {
+      const field = input;
+      field.value = '';
+    }
+  );
 };
 
 const saveSpec = details => {
@@ -131,8 +128,8 @@ const saveSpec = details => {
 
   return SPECS.add({
     ...details,
-    status: "active",
-    type: "mini-app",
+    status: 'active',
+    type: 'mini-app',
     createAt: Date.now()
   })
     .then(ref => SPECS.doc(ref.id))
@@ -144,7 +141,7 @@ const specNameChanged = event => {
   if (spec.name) {
     spec.slug = toSlug(spec.name);
   }
-  // TODO check backend if name is unique, else flag
+  // TODO check backend if slug is unique, else flag
 };
 
 const specAboutChanged = event => {
@@ -159,7 +156,7 @@ const specDifficultyChanged = event => {
 const addAChallenge = () => {
   switchDetailsTo(`data-manage-challenge-instructions`);
   activeChallengeIndex = -1;
-  instructionsEditor.setValue("### Challenge Title");
+  instructionsEditor.setValue('### Challenge Title');
 };
 
 const saveAChallenge = () => {
@@ -182,38 +179,42 @@ const saveAChallenge = () => {
 const authorStarter = async () => {
   switchDetailsTo(`data-manage-challenge-starter`);
   let code = spec.starterCodebase;
-  if(!code) {
+  if (!code) {
     code = await import('../../commons/tpl/start.html');
   }
-  starterEditor.setValue(code);  
+  starterEditor.setValue(code);
 };
 
 const saveStarter = () => {
   const starterCode = starterEditor.getValue();
-  if(starterCode && trim(starterCode) !== '') {
+  if (starterCode && trim(starterCode) !== '') {
     spec.starterCodebase = starterCode;
     // TODO render it into a preview container
   }
 };
 
-const renderStarter = () => {
-
-};
+const renderStarter = () => {};
 
 const renderInstructions = () => {
-  const instructions = spec.challenges.reduce((all, {guide}) => `${all} \n\n ${guide}`, '');
-  select(`[data-preview='challenge-instructions'] .content`).innerHTML = marked(instructions, {
-    gfm: true,
-    smartLists: true
-  });
+  const instructions = spec.challenges.reduce(
+    (all, { guide }) => `${all} \n\n ${guide}`,
+    ''
+  );
+  select(`[data-preview='challenge-instructions'] .content`).innerHTML = marked(
+    instructions,
+    {
+      gfm: true,
+      smartLists: true
+    }
+  );
 };
 
-const togglePreviewEditModes = (event) => {
+const togglePreviewEditModes = event => {
   const activeNode = select(`[data-details-item='active']`);
-  if(!activeNode) return;
+  if (!activeNode) return;
 
   const inPreviewMode = activeNode.hasAttribute('data-preview');
-  if(inPreviewMode) {
+  if (inPreviewMode) {
     const key = activeNode.getAttribute('data-preview');
 
     renderStarter();
@@ -224,7 +225,7 @@ const togglePreviewEditModes = (event) => {
 
     const previewQry = `data-preview=${modeKey}`;
     const previewNode = select(`[${previewQry}]`);
-    if(!previewNode) return;
+    if (!previewNode) return;
 
     renderInstructions();
     switchDetailsTo(previewQry);
@@ -237,49 +238,54 @@ const buildUI = mode => {
   if (builtUI === true) return;
 
   const viewTitle = select(`[data-view='create-edit-spec'] [data-view-title]`);
-  viewTitle.textContent = mode === "create" ? "Create Spec" : "Manage Spec";
+  viewTitle.textContent = mode === 'create' ? 'Create Spec' : 'Manage Spec';
 
   mdc.textField.MDCTextField.attachTo(specNameField);
   specNameField
-    .querySelector("input")
-    .addEventListener("blur", specNameChanged);
+    .querySelector('input')
+    .addEventListener('blur', specNameChanged);
 
   mdc.textField.MDCTextField.attachTo(specAboutField);
   specAboutField
-    .querySelector("input")
-    .addEventListener("blur", specAboutChanged);
+    .querySelector('input')
+    .addEventListener('blur', specAboutChanged);
 
   mdc.select.MDCSelect.attachTo(specDifficultyField);
-  specDifficultyField
-    .addEventListener("MDCSelect:change", specDifficultyChanged);
+  specDifficultyField.addEventListener(
+    'MDCSelect:change',
+    specDifficultyChanged
+  );
 
   mdc.list.MDCList.attachTo(challengeListEl);
   const challengeList = new mdc.list.MDCList.attachTo(challengeListEl);
   challengeList.singleSelection = true;
   challengeList.listElements.map(listItemEl => new MDCRipple(listItemEl));
 
-  rAF({wait: 1500}).then(() => {
+  rAF({ wait: 1500 }).then(() => {
     select(`[data-action='add-challenge']`).addEventListener(
-      "click",
+      'click',
       addAChallenge
     );
-  
+
     select(`[data-action='save-challenge']`).addEventListener(
-      "click",
+      'click',
       saveAChallenge
     );
 
-    select(`[data-action='set-starter-code']`).addEventListener('click', authorStarter);
+    select(`[data-action='set-starter-code']`).addEventListener(
+      'click',
+      authorStarter
+    );
 
     select(`[data-action='save-starter']`).addEventListener(
-      "click",
+      'click',
       saveStarter
     );
 
     select('#toggle-viewer').addEventListener('click', togglePreviewEditModes);
   });
 
-  saveSpecBtn.addEventListener("click", () => {
+  saveSpecBtn.addEventListener('click', () => {
     saveSpec(spec).then(updated => {
       spec = {
         id: updated.id,
@@ -289,22 +295,22 @@ const buildUI = mode => {
   });
 
   loadCodemirrorAssets({
-    mode: "markdown"
+    mode: 'markdown'
   }).then(() => {
-    instructionsEditor = CodeMirror(select("#challenge-instructions"), {
-      theme: "idea",
+    instructionsEditor = CodeMirror(select('#challenge-instructions'), {
+      theme: 'idea',
       autofocus: true,
       lineWrapping: true,
       matchBrackets: true,
       autoCloseBrackets: true,
-      mode: { name: "markdown", highlightFormatting: true }
+      mode: { name: 'markdown', highlightFormatting: true }
     });
   });
 
   loadCodemirrorAssets({
-    mode: "htmlmixed"
+    mode: 'htmlmixed'
   }).then(() => {
-    starterEditor = CodeMirror(select("#challenge-starter"), {
+    starterEditor = CodeMirror(select('#challenge-starter'), {
       theme: 'idea',
       lineNumbers: true,
       lineWrapping: true,
@@ -322,36 +328,41 @@ const buildUI = mode => {
 };
 
 const adminWillCreateSpec = () => {
-  buildUI({ mode: "create" });
+  buildUI({ mode: 'create' });
   clearInputValues();
 
-  goTo("create-edit-spec");
-  rAF().then(queue => queue(canSaveSpec));
+  goTo('create-edit-spec');
+  rAF().then(() => canSaveSpec());
 };
 
-const manageDifficultySelection = (difficulty) => {
-  const selectedTextNodes = [...selectAll(".specdifficulty-ul .mdc-list-item--selected")];
-  const difficultyInput = specDifficultyField.querySelector("input");
+const manageDifficultySelection = difficulty => {
+  const selectedTextNodes = [
+    ...selectAll('.specdifficulty-ul .mdc-list-item--selected')
+  ];
+  const difficultyInput = specDifficultyField.querySelector('input');
   const difficultyOption = select(`[data-value=${difficulty}]`);
-  const selectedText = specDifficultyField.querySelector(".mdc-select__selected-text");
+  const selectedText = specDifficultyField.querySelector(
+    '.mdc-select__selected-text'
+  );
 
-  selectedTextNodes
-  .map(
-    node => node.classList.remove('mdc-list-item--selected')
+  selectedTextNodes.map(node =>
+    node.classList.remove('mdc-list-item--selected')
   );
 
   difficultyInput.value = difficulty;
   difficultyOption.classList.add('mdc-list-item--selected');
   difficultyOption.setAttribute('aria-selected', 'true');
-  selectedText.innerHTML = `${difficulty.charAt(0).toUpperCase()}${difficulty.slice(1)}`;
-  selectedText.focus()
-}
+  selectedText.innerHTML = `${difficulty
+    .charAt(0)
+    .toUpperCase()}${difficulty.slice(1)}`;
+  selectedText.focus();
+};
 
 const manageASpec = event => {
-  const itemEl = event.target.closest(".mdc-card");
+  const itemEl = event.target.closest('.mdc-card');
   if (!itemEl) return;
 
-  const id = itemEl.getAttribute("data-key");
+  const id = itemEl.getAttribute('data-key');
   if (!id) return;
 
   SPECS.doc(id)
@@ -362,54 +373,52 @@ const manageASpec = event => {
         ...doc.data()
       };
 
-      const nameInput = specNameField.querySelector("input");
+      const nameInput = specNameField.querySelector('input');
       nameInput.value = spec.name;
       nameInput.focus();
 
-      const aboutInput = specAboutField.querySelector("input");
+      const aboutInput = specAboutField.querySelector('input');
       aboutInput.value = spec.about || '';
       aboutInput.focus();
 
-      let difficulty = "beginner";
+      let difficulty = 'beginner';
       if (spec.difficulty) ({ difficulty } = spec);
       manageDifficultySelection(difficulty);
 
       render(challengeListItemTPL(spec.challenges), challengeListEl);
-      challengeListEl.querySelector("li").click();
+      challengeListEl.querySelector('li').click();
     });
 
-  buildUI({ mode: "manage" });
+  buildUI({ mode: 'manage' });
 
   select(`[data-view='create-edit-spec'] [data-view-title]`).textContent =
-    "Manage A Spec";
-  goTo("create-edit-spec", { id });
+    'Manage A Spec';
+  goTo('create-edit-spec', { id });
 };
 
 const specsListItemTPL = specs => {
   return html`
-    ${
-      specs.map(
-        item => html`
-          <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-2">
-            <div
-              class="mdc-card text-only"
-              data-key=${item.id}
-              @click=${manageASpec}
-            >
-              <div class="mdc-card__primary-action" tabindex="0">
-                <h2 class="mdc-typography--headline6">${item.name}</h2>
-                <div class="mdc-typography--body2">${item.about}</div>
-              </div>
+    ${specs.map(
+      item => html`
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-2">
+          <div
+            class="mdc-card text-only"
+            data-key=${item.id}
+            @click=${manageASpec}
+          >
+            <div class="mdc-card__primary-action" tabindex="0">
+              <h2 class="mdc-typography--headline6">${item.name}</h2>
+              <div class="mdc-typography--body2">${item.about}</div>
             </div>
           </div>
-        `
-      )
-    }
+        </div>
+      `
+    )}
   `;
 };
 
 export const adminWillViewSpecs = () => {
-  SPECS.where("status", "==", "active")
+  SPECS.where('status', '==', 'active')
     .get()
     .then(snapshot => {
       const specs = [];
@@ -423,13 +432,13 @@ export const adminWillViewSpecs = () => {
     })
     .catch(console.warn);
 
-  goTo("specs");
+  goTo('specs');
 
   [...selectAll('.mdc-chip-set')].forEach(chip => {
     mdc.chips.MDCChip.attachTo(chip);
   });
-  select("[data-action=add-spec]").addEventListener(
-    "click",
+  select('[data-action=add-spec]').addEventListener(
+    'click',
     adminWillCreateSpec
   );
 };

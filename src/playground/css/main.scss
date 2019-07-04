@@ -167,15 +167,6 @@ body[data-assessment] header.mdc-top-app-bar--short-collapsed button {
   min-height: 100%;
 }
 
-.mdc-icon-button img {
-  position: fixed;
-  width: 50px;
-  height: 50px;
-  top: 0.2em;
-  right: 1em;
-  border-radius: 50%;
-}
-
 /* Style The Challenge Instructions */
 
 #instructions [data-task-title] {
@@ -295,6 +286,37 @@ body[data-nav='playground'] [data-profile] {
   top: 0.2em;
   right: 1em;
   border-radius: 50%;
+  transition: width .5s, height .5s;
+}
+
+body[data-nav='playground'] [data-profile].has-usr-photo {
+  width: 36px;
+  height: 36px;
+}
+
+body[data-nav='playground'] [data-profile].has-usr-photo img {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  top: 0;
+  right: 0;
+  border-radius: 50%;
+}
+
+body[data-nav='playground'] [data-profile].has-usr-photo > svg {
+  display: none;
+}
+
+body[data-nav='playground'] .mdc-menu .mdc-list {
+  padding-bottom: 0px;
+  padding-top: 0px;
+}
+
+body[data-nav='playground'] .signout-btn {
+  left: 93% !important;
+  top: 60px !important;
+  min-width: 90px;
+  z-index: 1000;
 }
 
 body[data-nav='playground'] [data-timer] {
@@ -325,14 +347,5 @@ body[data-nav='playground'] #launcher-svg-container.km-chat-icon-sidebox {
 
 body[data-nav='playground'] #launcher-svg-container.km-chat-icon-sidebox img {
   width: 70%;
-}
-.mdc-menu .mdc-list {
-  padding-bottom: 0px;
-  padding-top: 0px;
-}
-.signout-btn {
-  left: 93% !important;
-  top: 60px !important;
-  min-width: 90px;
 }
 /* End Playground */
