@@ -1,4 +1,4 @@
-import firebase from 'firebase/app';
+import * as firebase from 'firebase/app';
 
 import {
   trim,
@@ -38,24 +38,22 @@ const signIn = () => {
     .signInWithPopup(provider)
     .catch(error => {
       const { code, message } = error;
-      if(code && code.indexOf('account-exists-with-different-credential')) {
-        notify('An account already exists with the same email address but different sign-in credentials. Make sure you are using the intended Github account');
+      if (code && code.indexOf('account-exists-with-different-credential')) {
+        notify(
+          'An account already exists with the same email address but different sign-in credentials. Make sure you are using the intended Github account'
+        );
       }
 
-      if(code && code.indexOf('network-request-failed')) {
-        notify(
-          'Potential network error. Please refresh and try again!'
-        );
+      if (code && code.indexOf('network-request-failed')) {
+        notify('Potential network error. Please refresh and try again!');
       }
 
       ga('send', {
         hitType: 'event',
         nonInteraction: true,
-        eventValue: `${message}`,
-        eventCategory: 'Playground',
-        eventAction: 'signin-failure'
+        eventAction: `${message}`,
+        eventCategory: 'Playground'
       });
-
     });
 };
 
@@ -84,7 +82,7 @@ const fetchImpliedAssessment = () => {
     .get();
 };
 
-const assessmentIsLive = (assessmentDoc) => {
+const assessmentIsLive = assessmentDoc => {
   const { startingAt } = assessmentDoc.data();
   if (isAfterKickoffTime({ startingAt })) return true;
 
@@ -95,21 +93,20 @@ const assessmentIsLive = (assessmentDoc) => {
   return false;
 };
 
-const enterPlayground = async (assessmentDoc) => {
+const enterPlayground = async assessmentDoc => {
   notify('Busy, loading playground resources  ...');
 
   const playground = await importPlayground();
-  playground.enter({ user: appUser, test: testId, assessmentDoc});
+  playground.enter({ user: appUser, test: testId, assessmentDoc });
 };
 
-const enterHome = (testId) => {
-  // select('body').removeAttribute('data-auth');
+const enterHome = testId => {
   goTo('home', { test: testId });
 };
 
 const initServiceBot = () => loadStylesAndScripts('/engines/service-bot.js');
 
-const bootstrapAssessment = async (user) => {
+const bootstrapAssessment = async user => {
   appUser = user;
   let assessmentDoc;
 
@@ -128,7 +125,11 @@ const bootstrapAssessment = async (user) => {
     });
   }
 
-  if(assessmentDoc && assessmentDoc.exists && assessmentIsLive(assessmentDoc)) {
+  if (
+    assessmentDoc &&
+    assessmentDoc.exists &&
+    assessmentIsLive(assessmentDoc)
+  ) {
     await enterPlayground(assessmentDoc);
   } else {
     notify(invalidURLMsg);
@@ -156,10 +157,10 @@ const setupAuthentication = () => {
 
       return;
     }
-  
+
     goTo('intro', { test: testId });
     bootstrapAssessment(user);
-    gtag('set', {'user_id': user.email}); 
+    ga('set', 'userId', `${user.email}`);
   });
 };
 
@@ -187,7 +188,7 @@ const takeOff = async () => {
 
     notify('Busy. Loading Critical Assets. Please Wait ...');
     const fb = await importFirebaseInitializer();
-    
+
     notify('Busy, please wait ...');
     await fb.init();
     setupAuthentication();
