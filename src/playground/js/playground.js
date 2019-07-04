@@ -1,4 +1,4 @@
-import firebase from 'firebase/app';
+import * as firebase from "firebase/app";
 
 import marked from 'marked';
 import emmet from '@emmetio/codemirror-plugin';
