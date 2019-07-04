@@ -15,7 +15,7 @@ import {
   exceptId
 } from '../../commons/js/utils.js';
 
-let spec;
+let spec = {};
 let builtUI = false;
 let starterEditor;
 let instructionsEditor;
@@ -30,6 +30,37 @@ const specAboutField = select('#specabout-field');
 const specDifficultyField = select('#specdifficulty-field');
 const challengeListEl = select('#challenge-list');
 
+const deleteSpecIcon = select(`[data-action='delete-spec']`);
+const deleteConfirmBtn = select(`[data-action='delete-confirm']`);
+const deleteDialogComponent = select(`[data-action='delete-dialog']`);
+const cancelDeleteBtn = select(`[data-mdc-dialog-action='close']`);
+const deleteDialogScrim = select('.mdc-dialog__scrim');
+
+ const deleteSpec = () => {
+  if (!spec || !spec.id) return;
+  SPECS.doc(spec.id).delete().then(() => {
+    // TODO notify user
+    window.location.pathname = '!#specs';
+  }).catch((error) => {
+    // TODO notify user
+    console.warn('Error deleting spec: ', error.message);
+  });
+}
+
+ const closeDeleteDialog = () => {
+  deleteDialogComponent.classList.remove('mdc-dialog--open');
+  cancelDeleteBtn.removeEventListener('click', closeDeleteDialog);
+  deleteDialogScrim.removeEventListener('click', closeDeleteDialog);
+  deleteConfirmBtn.removeEventListener('click', deleteSpec);
+}
+
+ const openDeleteDialog = () => {
+  if (!spec || !spec.id) return;
+  deleteDialogComponent.classList.add('mdc-dialog--open');
+  cancelDeleteBtn.addEventListener('click', closeDeleteDialog);
+  deleteDialogScrim.addEventListener('click', closeDeleteDialog);
+  deleteConfirmBtn.addEventListener('click', deleteSpec);
+}
 const switchDetailsTo = attr => {
   const node = select(`[${attr}]`);
   if (!node) return;
@@ -293,6 +324,8 @@ const buildUI = mode => {
       };
     });
   });
+
+  deleteSpecIcon.addEventListener("click", openDeleteDialog);
 
   loadCodemirrorAssets({
     mode: 'markdown'
