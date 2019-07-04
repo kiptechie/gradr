@@ -30,7 +30,7 @@ const specAboutField = select("#specabout-field");
 const specDifficultyField = select("#specdifficulty-field")
 const challengeListEl = select("#challenge-list");
 
-const deleteSpecIcon = select(`[data-action='delete-test']`);
+const deleteSpecIcon = select(`[data-action='delete-spec']`);
 const deleteConfirmBtn = select(`[data-action='delete-confirm']`);
 const deleteDialogComponent = select(`[data-action='delete-dialog']`);
 const cancelDeleteBtn = select(`[data-mdc-dialog-action='close']`);
@@ -38,12 +38,12 @@ const deleteDialogScrim = select('.mdc-dialog__scrim');
 
  const deleteSpec = () => {
   if (!spec || !spec.id) return;
-  SPECS.doc(spec.id)
-    .delete().then(() => {
-    console.log('Spec successfully deleted!');
+  SPECS.doc(spec.id).delete().then(() => {
+    // TODO notify user
     window.location.pathname = '!#specs';
   }).catch((error) => {
-    console.error('Error deleting spec: ', error);
+    // TODO notify user
+    console.warn('Error deleting spec: ', error.message);
   });
 }
 
