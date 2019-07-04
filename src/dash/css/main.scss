@@ -87,6 +87,11 @@ header a svg {
   margin: 0;
 }
 
+[data-view=create-edit-spec] .mdc-typography--headline5 .mdc-icon-button {
+  margin-top: -0.3em;
+  margin-right: 0.3em;
+}
+
 #specabout-field {
   min-width: 90%;
 }
