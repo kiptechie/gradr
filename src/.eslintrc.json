@@ -6,6 +6,8 @@
     "extends": ["airbnb-base", "prettier"],
     "globals": {
         "mdc": "readonly",
+        "gtag": "readonly",
+        "ga": "readonly",
         "CodeMirror": "readonly",
         "Atomics": "readonly",
         "SharedArrayBuffer": "readonly"

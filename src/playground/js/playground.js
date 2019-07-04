@@ -57,6 +57,13 @@ const notify = (msg) => {
 const signOut = event => {
   event.preventDefault();
   firebase.auth().signOut();
+
+  ga('send', {
+    hitType: 'event',
+    eventCategory: 'Playground',
+    eventAction: 'signout',
+    eventLabel: `${assessment.slug}`
+  });
 };
 
 const setupAccount = () => {
@@ -342,6 +349,13 @@ const initProject = async () => {
   rAF({ wait: 500 }).then(() => {
     select('body').classList.remove('mdc-dialog-scroll-lock', 'mdc-dialog--open');
   });
+
+  ga('send', {
+    hitType: 'event',
+    eventCategory: 'Playground',
+    eventAction: 'assessment-started',
+    eventLabel: `${assessment.slug}`
+  });
 };
 
 const challengeIntro = async () => {
@@ -352,8 +366,16 @@ const challengeIntro = async () => {
     if(appUser && appUser.displayName) {
       aName = appUser.displayName.split(/\s+/);
     }
+
     notify(`Thats right ${aName[0]}! Please wait while we start things off for you ...`);
     initProject();
+    
+    ga('send', {
+      hitType: 'event',
+      eventCategory: 'Playground',
+      eventAction: 'begin-assessment',
+      eventLabel: `${assessment.slug}`
+    });
   });
 
   // await getAssessmentSpec();
@@ -388,10 +410,18 @@ const handleChallengeNavClicks = (event) => {
   event.preventDefault();
   
   const target = event.target.closest('button');
-  const isActive = target.getAttribute('data-challange-status') === 'active'
-  const isPassing = target.getAttribute('data-challange-audit') === 'passing'
+  const isActive = target.getAttribute('data-challange-status') === 'active';
+  const isPassing = target.getAttribute('data-challange-audit') === 'passing';
+  const navState = isActive || isPassing;
+
+  ga('send', {
+    hitType: 'event',
+    eventCategory: 'Playground',
+    eventAction: 'challenge-nav',
+    eventLabel: `${assessment.slug}`
+  });
   
-  if(isActive || isPassing) {
+  if(navState) {
     const step = target.getAttribute('data-challange-step') || 0;
     navigateToChallengeInstructions( parseInt(step, 10) );
     switchPreviewToInstructions();
@@ -408,6 +438,13 @@ const setTheStage = async (challengeIndex, started) => {
   select('#runit').addEventListener('click', (event) => {
     event.preventDefault();
     playCode();
+
+    ga('send', {
+      hitType: 'event',
+      eventCategory: 'Playground',
+      eventAction: 'play-code-btn',
+      eventLabel: `${assessment.slug}`
+    });
   });
 
   Array.from(selectAll(`button[data-challange-step]`)).forEach(btn => {
@@ -420,8 +457,20 @@ const setTheStage = async (challengeIndex, started) => {
   toggleViewer.listen('MDCIconButtonToggle:change', ({detail}) => {
     if(detail.isOn === true) {
       switchPreviewToEmulator();
+      ga('send', {
+        hitType: 'event',
+        eventCategory: 'Playground',
+        eventAction: 'toggle-to-emulator',
+        eventLabel: `${assessment.slug}`
+      });
     } else {
       switchPreviewToInstructions();
+      ga('send', {
+        hitType: 'event',
+        eventCategory: 'Playground',
+        eventAction: 'toggle-to-instructions',
+        eventLabel: `${assessment.slug}`
+      });
     }
   });
 
@@ -529,6 +578,13 @@ const handleSpecialKeyCombinations = () => {
 
     if (event.ctrlKey && key === 13) {
       playCode();
+
+      ga('send', {
+        hitType: 'event',
+        eventCategory: 'Playground',
+        eventAction: 'play-code-keys',
+        eventLabel: `${assessment.slug}`
+      });
     }
   });
 };

@@ -40,17 +40,22 @@ const signIn = () => {
       const { code, message } = error;
       if(code && code.indexOf('account-exists-with-different-credential')) {
         notify('An account already exists with the same email address but different sign-in credentials. Make sure you are using the intended Github account');
-        return;
       }
 
       if(code && code.indexOf('network-request-failed')) {
         notify(
           'Potential network error. Please refresh and try again!'
         );
-        return;
       }
 
-      console.warn(`${code} => ${message}`);
+      ga('send', {
+        hitType: 'event',
+        nonInteraction: true,
+        eventValue: `${message}`,
+        eventCategory: 'Playground',
+        eventAction: 'signin-failure'
+      });
+
     });
 };
 
@@ -111,8 +116,16 @@ const bootstrapAssessment = async (user) => {
   try {
     assessmentDoc = await fetchImpliedAssessment();
   } catch (error) {
-    // TODO log this error
     notify('Unable to load your assessment, please retry.');
+    console.warn(error.message);
+
+    ga('send', {
+      hitType: 'event',
+      nonInteraction: true,
+      eventCategory: 'Playground',
+      eventLabel: `${error.message}`,
+      eventAction: 'fetch-implied-assessment'
+    });
   }
 
   if(assessmentDoc && assessmentDoc.exists && assessmentIsLive(assessmentDoc)) {
@@ -133,11 +146,20 @@ const setupAuthentication = () => {
     if (!user) {
       enterHome(testId);
       setupSignIn();
+
+      ga('send', {
+        hitType: 'event',
+        nonInteraction: true,
+        eventCategory: 'Playground',
+        eventAction: 'setup-signin'
+      });
+
       return;
     }
   
     goTo('intro', { test: testId });
     bootstrapAssessment(user);
+    gtag('set', {'user_id': user.email}); 
   });
 };
 
