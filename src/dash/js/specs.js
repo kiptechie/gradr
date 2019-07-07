@@ -2,7 +2,8 @@ import firebase from "firebase/app";
 
 import marked from 'marked';
 import { html, render } from "lit-html";
-import emmet from '@emmetio/codemirror-plugin';
+import { monacoCreate } from '../../commons/js/monaco-init.js';
+import language from '../../commons/js/monaco-lang';
 
 import {
   select,
@@ -10,7 +11,6 @@ import {
   goTo,
   rAF,
   toSlug,
-  loadCodemirrorAssets,
   trim,
   exceptId
 } from "../../commons/js/utils.js";
@@ -32,9 +32,9 @@ const challengeListEl = select("#challenge-list");
 
 const switchDetailsTo = attr => {
   const node = select(`[${attr}]`);
-  if(!node) return;
+  if (!node) return;
 
-  if(node.getAttribute(`${attr}`) !== 'active') {
+  if (node.getAttribute(`${attr}`) !== 'active') {
     [...selectAll(`[data-details-item]`)].forEach(item => {
       item.setAttribute('data-details-item', 'off');
     });
@@ -61,8 +61,8 @@ const selectAChallenge = event => {
 const challengeListItemTPL = challenges => {
   return html`
     ${
-      challenges.map(
-        (item, index) => html`
+    challenges.map(
+      (item, index) => html`
           <li
             class="mdc-list-item"
             tabindex="0"
@@ -77,7 +77,7 @@ const challengeListItemTPL = challenges => {
             </span>
           </li>
         `
-      )
+    )
     }
   `;
 };
@@ -101,10 +101,10 @@ const canSaveSpec = () => {
 
 const clearInputValues = () => {
   spec = {};
-  if(instructionsEditor) instructionsEditor.setValue("");
+  if (instructionsEditor) instructionsEditor.setValue("");
   render(challengeListItemTPL([]), challengeListEl);
 
-  select(".mdc-select__selected-text").innerHTML="";
+  select(".mdc-select__selected-text").innerHTML = "";
   const instructionsTemplate = select("[data-manage-challenge-instructions]");
   if (instructionsTemplate) {
     instructionsTemplate.setAttribute('data-details-item', 'off');
@@ -182,15 +182,15 @@ const saveAChallenge = () => {
 const authorStarter = async () => {
   switchDetailsTo(`data-manage-challenge-starter`);
   let code = spec.starterCodebase;
-  if(!code) {
+  if (!code) {
     code = await import('../../commons/tpl/start.html');
   }
-  starterEditor.setValue(code);  
+  starterEditor.setValue(code);
 };
 
 const saveStarter = () => {
   const starterCode = starterEditor.getValue();
-  if(starterCode && trim(starterCode) !== '') {
+  if (starterCode && trim(starterCode) !== '') {
     spec.starterCodebase = starterCode;
     // TODO render it into a preview container
   }
@@ -201,7 +201,7 @@ const renderStarter = () => {
 };
 
 const renderInstructions = () => {
-  const instructions = spec.challenges.reduce((all, {guide}) => `${all} \n\n ${guide}`, '');
+  const instructions = spec.challenges.reduce((all, { guide }) => `${all} \n\n ${guide}`, '');
   select(`[data-preview='challenge-instructions'] .content`).innerHTML = marked(instructions, {
     gfm: true,
     smartLists: true
@@ -210,10 +210,10 @@ const renderInstructions = () => {
 
 const togglePreviewEditModes = (event) => {
   const activeNode = select(`[data-details-item='active']`);
-  if(!activeNode) return;
+  if (!activeNode) return;
 
   const inPreviewMode = activeNode.hasAttribute('data-preview');
-  if(inPreviewMode) {
+  if (inPreviewMode) {
     const key = activeNode.getAttribute('data-preview');
 
     renderStarter();
@@ -224,7 +224,7 @@ const togglePreviewEditModes = (event) => {
 
     const previewQry = `data-preview=${modeKey}`;
     const previewNode = select(`[${previewQry}]`);
-    if(!previewNode) return;
+    if (!previewNode) return;
 
     renderInstructions();
     switchDetailsTo(previewQry);
@@ -258,12 +258,12 @@ const buildUI = mode => {
   challengeList.singleSelection = true;
   challengeList.listElements.map(listItemEl => new MDCRipple(listItemEl));
 
-  rAF({wait: 1500}).then(() => {
+  rAF({ wait: 1500 }).then(() => {
     select(`[data-action='add-challenge']`).addEventListener(
       "click",
       addAChallenge
     );
-  
+
     select(`[data-action='save-challenge']`).addEventListener(
       "click",
       saveAChallenge
@@ -288,38 +288,18 @@ const buildUI = mode => {
     });
   });
 
-  loadCodemirrorAssets({
-    mode: "markdown"
-  }).then(() => {
-    instructionsEditor = CodeMirror(select("#challenge-instructions"), {
-      theme: "idea",
-      autofocus: true,
-      lineWrapping: true,
-      matchBrackets: true,
-      autoCloseBrackets: true,
-      mode: { name: "markdown", highlightFormatting: true }
-    });
-  });
+  // setup monaco for challenge instructions
+  monacoCreate({ language: language.markdown }, select("#challenge-instructions"));
 
-  loadCodemirrorAssets({
-    mode: "htmlmixed"
-  }).then(() => {
-    starterEditor = CodeMirror(select("#challenge-starter"), {
-      theme: 'idea',
-      lineNumbers: true,
-      lineWrapping: true,
-      matchBrackets: true,
-      autoCloseBrackets: true,
-      mode: { name: 'htmlmixed' },
-      extraKeys: {
-        Tab: 'emmetExpandAbbreviation',
-        Enter: 'emmetInsertLineBreak'
-      }
-    });
-  });
+  // setup monaco for challenge instructions
+  monacoCreate({ language: language.javascript }, select("#challenge-starter"));
 
   builtUI = true;
 };
+
+
+
+
 
 const adminWillCreateSpec = () => {
   buildUI({ mode: "create" });
@@ -336,9 +316,9 @@ const manageDifficultySelection = (difficulty) => {
   const selectedText = specDifficultyField.querySelector(".mdc-select__selected-text");
 
   selectedTextNodes
-  .map(
-    node => node.classList.remove('mdc-list-item--selected')
-  );
+    .map(
+      node => node.classList.remove('mdc-list-item--selected')
+    );
 
   difficultyInput.value = difficulty;
   difficultyOption.classList.add('mdc-list-item--selected');
@@ -388,8 +368,8 @@ const manageASpec = event => {
 const specsListItemTPL = specs => {
   return html`
     ${
-      specs.map(
-        item => html`
+    specs.map(
+      item => html`
           <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-2">
             <div
               class="mdc-card text-only"
@@ -403,7 +383,7 @@ const specsListItemTPL = specs => {
             </div>
           </div>
         `
-      )
+    )
     }
   `;
 };

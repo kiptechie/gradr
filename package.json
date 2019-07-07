@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "scripts": {
     "lint": "eslint src -c src/.eslintrc.json",
-    "develop-playground": "parcel src/playground/index.html --out-dir dev-build",
+    "develop-playground": "yarn clear && yarn monaco-build && parcel src/playground/index.html --out-dir dev-build",
     "develop-admin": "parcel src/dash/index.html --out-dir dev-build",
     "build-playground": "parcel build src/playground/index.html --out-dir dist/playground",
     "build-admin": "parcel build src/dash/index.html --out-dir dist/admin",
     "deploy-admin": "firebase deploy --only hosting:admin",
-    "deploy-playground": "firebase deploy --only hosting:playground"
+    "deploy-playground": "firebase deploy --only hosting:playground",
+    "clear": "rimraf dev-build",
+    "monaco-build": "parcel build node_modules/monaco-editor/esm/vs/language/**/*.worker.js node_modules/monaco-editor/esm/vs/editor/**/*.worker.js --out-dir dev-build --no-source-maps"
   },
   "keywords": [],
   "author": "",
@@ -23,22 +25,22 @@
     "eslint-config-prettier": "^3.4.0",
     "eslint-plugin-import": "^2.17.2",
     "prettier": "^1.15.3",
+    "rimraf": "2.6.3",
     "sass": "^1.22.0"
   },
   "dependencies": {
     "@babel/runtime": "^7.4.4",
-    "@emmetio/codemirror-plugin": "^0.5.4",
     "astq": "^2.6.1",
     "chart.js": "^2.8.0",
     "chartjs-plugin-colorschemes": "^0.3.0",
     "chartjs-plugin-datalabels": "^0.6.0",
     "chartjs-plugin-doughnutlabel": "^2.0.3",
-    "codemirror": "^5.42.2",
     "firebase": "^6.0.2",
     "first-input-delay": "^0.1.3",
     "g": "^2.0.1",
     "intl-relative-time-format": "^1.0.6",
     "lit-html": "^1.0.0",
-    "marked": "^0.6.2"
+    "marked": "0.6.3",
+    "monaco-editor": "0.17.1"
   }
 }

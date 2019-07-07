@@ -156,6 +156,7 @@ body[data-assessment] header.mdc-top-app-bar--short-collapsed button {
   float: right;
   width: calc(100% - 60px);
   height: calc(100vh - 98px);
+  touch-action: none;
 }
 
 #code .CodeMirror-vscrollbar {

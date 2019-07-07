@@ -69,7 +69,12 @@ export const exceptId = (map = {}) =>
       }),
       {}
     );
-
+    
+/**
+ * @param {string} Code code written by candidate
+ * @returns {object} an object containing html,css,js from the initial code
+ * @function
+ */
 export const extractCode = code => {
   const styles = trim(
     code.substring(code.indexOf('<style>') + 7, code.indexOf('</style>'))
@@ -147,34 +152,6 @@ export const loadStylesAndScripts = (...urls) => {
       (prevLoadOp, url) => prevLoadOp.then(() => handleAsset(url)),
       Promise.resolve()
     );
-};
-
-const codeMirrorAssets = mode => {
-  const assets = {
-    markdown: [
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/theme/idea.min.css',
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/mode/markdown/markdown.min.js'
-    ],
-    htmlmixed: [
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/theme/idea.min.css',
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/mode/xml/xml.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/mode/javascript/javascript.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/mode/css/css.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/mode/htmlmixed/htmlmixed.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/addon/edit/matchbrackets.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/addon/edit/closebrackets.min.js'
-    ]
-  };
-  return assets[mode] || [];
-};
-
-export const loadCodemirrorAssets = ({ mode }) => {
-  const modeSpecificAssets = codeMirrorAssets(mode);
-  return loadStylesAndScripts(
-    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/codemirror.min.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.42.2/codemirror.min.js',
-    ...modeSpecificAssets
-  );
 };
 
 export const responseCanErr = response => {

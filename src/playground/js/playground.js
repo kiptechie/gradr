@@ -1,7 +1,5 @@
 import firebase from 'firebase/app';
-
 import marked from 'marked';
-import emmet from '@emmetio/codemirror-plugin';
 
 import {
   rAF,
@@ -13,8 +11,9 @@ import {
   extractCode,
   dateTimeDiff,
   isWithinDeadline,
-  loadCodemirrorAssets
 } from '../../commons/js/utils.js';
+import language from '../../commons/js/monaco-lang';
+import { monacoCreate } from '../../commons/js/monaco-init';
 
 let spec;
 let toast;
@@ -314,6 +313,10 @@ const progressTo = async (challengeIndex) => {
   displayProgressAndInstructions(challengeIndex);
 };
 
+/**
+ * @function
+ * @returns {string} code written by candidate
+ */
 const getCode = () => {
   let codebase = editor.getValue();
   if (!codebase) {
@@ -434,21 +437,7 @@ const setTheStage = async (challengeIndex, started) => {
     select('body').setAttribute('data-assessment', started);
   }
 
-  await loadCodemirrorAssets({ mode: 'htmlmixed' });
-  emmet(CodeMirror);
-  const codeEditor = CodeMirror(select('#code'), {
-    theme: 'idea',
-    autofocus: true,
-    lineNumbers: true,
-    lineWrapping: true,
-    matchBrackets: true,
-    autoCloseBrackets: true,
-    mode: { name: 'htmlmixed' },
-    extraKeys: {
-      Tab: 'emmetExpandAbbreviation',
-      Enter: 'emmetInsertLineBreak'
-    }
-  });
+  const codeEditor = monacoCreate({ language: language.html }, select('#code'));
 
   notify('DONE!');
   return { codeEditor, sandbox, viewer };
@@ -541,10 +530,10 @@ const proceed = async (project) => {
   editor = codeEditor;
   editor.setValue(code);
 
-  editor.on("beforeChange", (_, change) => {
-    if (change.origin === 'paste') change.cancel();
-  });
-  editor.refresh();
+  // editor.on("beforeChange", (_, change) => {
+  //   if (change.origin === 'paste') change.cancel();
+  // });
+  // editor.refresh();
 
   instructions = select('#instructions');
   rAF({ wait: 500 }).then(() => showCountdown());
@@ -601,5 +590,3 @@ export const enter = async (args = {}) => {
   deferredEnter(args); 
 };
 export default { enter };
-
-
