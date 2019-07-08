@@ -710,7 +710,7 @@ const testsListItemTPL = specs => html`
     item => html`
       <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-2">
         <div
-          class="mdc-card text-only"
+          class="mdc-card text-only spec-card"
           data-key=${item.id}
           @click=${manageATest}
         >
