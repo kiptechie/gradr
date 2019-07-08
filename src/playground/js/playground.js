@@ -336,15 +336,16 @@ const initProject = async () => {
   const challengeIndex = 0;
   const started = Date.now();
 
-  await updateProjectWork({ started, challengeIndex });
-  assessmentProgress = {challengeIndex, completedChallenge: -1};
-  select('body').setAttribute('data-assessment', started);
-  
-  progressTo(challengeIndex);
   let aName = [''];
   if(appUser && appUser.displayName) {
     aName = appUser.displayName.split(/\s+/);
   }
+
+  await updateProjectWork({ started, challengeIndex, displayName:aName.join(' ') });
+  assessmentProgress = {challengeIndex, completedChallenge: -1};
+  select('body').setAttribute('data-assessment', started);
+  
+  progressTo(challengeIndex);
   notify(`Yo, you can now begin the assessment. Take it away ${aName[0]}!`);
   rAF({ wait: 500 }).then(() => {
     select('body').classList.remove('mdc-dialog-scroll-lock', 'mdc-dialog--open');
