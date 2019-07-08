@@ -528,9 +528,10 @@ const saveWorkBatched = async () => {
 
 const saveWork = ({completedChallenge, challengeIndex}) => {
   if(batchedProgress.length === 0) {
-    setTimeout(() => {
+    rAF({wait: 5000})
+    .then(() => {
       saveWorkBatched();
-    }, 5000);
+    });
   }
 
   if(savingBatchedProgress === true) return;
