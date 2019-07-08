@@ -436,7 +436,8 @@ const computePerformanceMatrix = () => {
       { value: 'all', text: 'All Entries' },
       { value: 'allstars', text: 'Completed Top 2 Challenges' },
       ...perfGroups.reverse(),
-      { value: 'bailers', text: 'Bailers' }
+      { value: 'dropped', text: `Started But Dropped Out` },
+      { value: 'bailers', text: `Didn't Even Start` }
     ];
 
     render(perfGroupItemTPL(allPerfGroups), perfSelector);
@@ -445,7 +446,8 @@ const computePerformanceMatrix = () => {
 };
 
 const findCandidatesByPerf = perf => {
-  if (!perf || perf === 'all') return candidates.slice();
+  const data = candidates.slice();
+  if (!perf || perf === 'all') return data;
 
   const spec = specifications.find(s => s.id === assessment.spec);
 
@@ -455,18 +457,22 @@ const findCandidatesByPerf = perf => {
       (x, i) => i
     );
     const [last, penultimate] = challenges.reverse();
-    return candidates
-      .slice()
-      .filter(e => [last, penultimate].includes(e.completedChallenge));
+    return data.filter(e => [last, penultimate].includes(e.completedChallenge));
   }
 
   if (perf === 'bailers') {
-    return candidates.slice().filter(e => !e.started);
+    return data.filter(e => !e.started);
   }
 
-  return candidates
-    .slice()
-    .filter(e => e.completedChallenge === parseInt(perf, 10));
+  if (perf === 'dropped') {
+    return data.filter(
+      e =>
+        e.started &&
+        (e.completedChallenge === undefined || e.completedChallenge === -1)
+    );
+  }
+
+  return data.filter(e => e.completedChallenge === parseInt(perf, 10));
 };
 
 const filterCandidatesByPerf = value => {
@@ -486,7 +492,10 @@ const handleExport = () => {
       let performance = '';
       if (!started) {
         performance = `Didn't Start`;
-      } else if (started && completedChallenge === undefined) {
+      } else if (
+        started &&
+        (completedChallenge === undefined || completedChallenge === -1)
+      ) {
         performance = `Dropped Out`;
       } else if (started && completedChallenge >= 0) {
         performance = `${completedChallenge + 1}`;
