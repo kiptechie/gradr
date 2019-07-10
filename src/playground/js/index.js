@@ -10,12 +10,14 @@ import {
 } from '../../commons/js/utils.js';
 
 import {
+  importGARelay,
   importPlayground,
   importFirebaseInitializer
 } from './module-manager.js';
 
 let toast;
 let testId;
+let GARelay;
 let appUser;
 let provider;
 let uiIsBuilt = false;
@@ -48,7 +50,7 @@ const signIn = () => {
         notify('Potential network error. Please refresh and try again!');
       }
 
-      ga('send', {
+      GARelay.ga('send', {
         hitType: 'event',
         nonInteraction: true,
         eventAction: `${message}`,
@@ -116,7 +118,7 @@ const bootstrapAssessment = async user => {
     notify('Unable to load your assessment, please retry.');
     console.warn(error.message);
 
-    ga('send', {
+    GARelay.ga('send', {
       hitType: 'event',
       nonInteraction: true,
       eventCategory: 'Playground',
@@ -148,7 +150,7 @@ const setupAuthentication = () => {
       enterHome(testId);
       setupSignIn();
 
-      ga('send', {
+      GARelay.ga('send', {
         hitType: 'event',
         nonInteraction: true,
         eventCategory: 'Playground',
@@ -160,13 +162,16 @@ const setupAuthentication = () => {
 
     goTo('intro', { test: testId });
     bootstrapAssessment(user);
-    ga('set', 'userId', `${user.email}`);
+    GARelay.ga('set', 'userId', `${user.email}`);
   });
 };
 
 const takeOff = async () => {
-  handleWindowPopState();
+  importGARelay().then(module => {
+    GARelay = module.default;
+  });
 
+  handleWindowPopState();
   toast = mdc.snackbar.MDCSnackbar.attachTo(select('#intro-toast'));
   const { pathname } = window.location;
 
@@ -191,6 +196,8 @@ const takeOff = async () => {
 
     notify('Busy, please wait ...');
     await fb.init();
+
+    GARelay.tryResend();
     setupAuthentication();
   }
 };

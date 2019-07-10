@@ -20,6 +20,7 @@ let spec;
 let toast;
 let device;
 let editor;
+let GARelay;
 let appUser;
 let testId;
 let projectId;
@@ -58,7 +59,7 @@ const signOut = event => {
   event.preventDefault();
   firebase.auth().signOut();
 
-  ga('send', {
+  GARelay.ga('send', {
     hitType: 'event',
     eventCategory: 'Playground',
     eventAction: 'signout',
@@ -351,7 +352,7 @@ const initProject = async () => {
     select('body').classList.remove('mdc-dialog-scroll-lock', 'mdc-dialog--open');
   });
 
-  ga('send', {
+  GARelay.ga('send', {
     hitType: 'event',
     eventCategory: 'Playground',
     eventAction: 'assessment-started',
@@ -371,7 +372,7 @@ const challengeIntro = async () => {
     notify(`Thats right ${aName[0]}! Please wait while we start things off for you ...`);
     initProject();
     
-    ga('send', {
+    GARelay.ga('send', {
       hitType: 'event',
       eventCategory: 'Playground',
       eventAction: 'begin-assessment',
@@ -415,7 +416,7 @@ const handleChallengeNavClicks = (event) => {
   const isPassing = target.getAttribute('data-challange-audit') === 'passing';
   const navState = isActive || isPassing;
 
-  ga('send', {
+  GARelay.ga('send', {
     hitType: 'event',
     eventCategory: 'Playground',
     eventAction: 'challenge-nav',
@@ -440,7 +441,7 @@ const setTheStage = async (challengeIndex, started) => {
     event.preventDefault();
     playCode();
 
-    ga('send', {
+    GARelay.ga('send', {
       hitType: 'event',
       eventCategory: 'Playground',
       eventAction: 'play-code-btn',
@@ -458,7 +459,7 @@ const setTheStage = async (challengeIndex, started) => {
   toggleViewer.listen('MDCIconButtonToggle:change', ({detail}) => {
     if(detail.isOn === true) {
       switchPreviewToEmulator();
-      ga('send', {
+      GARelay.ga('send', {
         hitType: 'event',
         eventCategory: 'Playground',
         eventAction: 'toggle-to-emulator',
@@ -466,7 +467,7 @@ const setTheStage = async (challengeIndex, started) => {
       });
     } else {
       switchPreviewToInstructions();
-      ga('send', {
+      GARelay.ga('send', {
         hitType: 'event',
         eventCategory: 'Playground',
         eventAction: 'toggle-to-instructions',
@@ -581,7 +582,7 @@ const handleSpecialKeyCombinations = () => {
     if (event.ctrlKey && key === 13) {
       playCode();
 
-      ga('send', {
+      GARelay.ga('send', {
         hitType: 'event',
         eventCategory: 'Playground',
         eventAction: 'play-code-keys',
@@ -650,6 +651,11 @@ const deferredEnter = async (args) => {
   };
 
   goTo('playground', { test });
+
+  import('../../commons/js/GARelay.js')
+  .then(module => {
+    GARelay = module.default;
+  });
 
   await getAssessmentSpec();
   const project = await createOrUpdateProject();
