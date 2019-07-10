@@ -349,3 +349,12 @@ body[data-nav='playground'] #launcher-svg-container.km-chat-icon-sidebox img {
   width: 70%;
 }
 /* End Playground */
+
+body[data-nav='playground'] .mdc-snackbar.mdc-snackbar--open,
+body[data-nav='playground'] .mdc-snackbar.mdc-snackbar--closing {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: auto;
+}
