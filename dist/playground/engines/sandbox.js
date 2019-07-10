@@ -1,18 +1,16 @@
 let specId;
 let parentWindow;
-const noAutoGradrErrorMsg = 'auto-grading for this assessment is not yet available';
-const relay = (data) => {
-  parentWindow.postMessage(
-    data, window.location.origin
-  );
+const noAutoGradrErrorMsg =
+  'auto-grading for this assessment is not yet available';
+const relay = data => {
+  parentWindow.postMessage(data, window.location.origin);
 };
 
 const executeScript = code =>
   new Promise(resolve => {
-
     let ast = esprima.parseScript(code);
     let gradrInstrumentation = program => program;
-    
+
     ast = gradrInstrumentation(ast);
     for (let node of ast.body) {
       if (node.type === 'VariableDeclaration') {
@@ -49,57 +47,56 @@ const executeMarkup = code =>
   });
 
 const runAudits = payload => {
-  if('undefined' === typeof gradr) {
+  if (typeof gradr === 'undefined') {
     relay({
-      feedback: { message:noAutoGradrErrorMsg }
+      feedback: { message: noAutoGradrErrorMsg }
     });
     return;
-  };
+  }
 
-  if('function' === typeof gradr) {
+  if (typeof gradr === 'function') {
     gradr(payload)
-    .then(({ completedChallenge }) => {
-      const done = completedChallenge + 1;
-      const msg = `Greate Job Completing Challenge ${done}. Your App Should Be Functional`;
-      relay({
-        feedback: {
-          message: msg,
-          completedChallenge
-        }
+      .then(({ completedChallenge }) => {
+        const done = completedChallenge + 1;
+        const msg = `Greate Job Completing Challenge ${done}. Your App Should Be Functional`;
+        relay({
+          feedback: {
+            message: msg,
+            completedChallenge
+          }
+        });
+      })
+      .catch(({ message }) => {
+        relay({
+          feedback: { message }
+        });
       });
-    })
-    .catch(({ message }) => {
-      relay({
-        feedback: { message }
-      });
-    });
   }
 };
 
-const installAssessment = event =>
+const installAutoGrader = event =>
   new Promise((resolve, reject) => {
-    if (!specId) {
-      specId = event.data.spec;
-      const autoGradrURL = `${window.location.origin}/engines/${specId}.js`;
+    if (specId) resolve();
 
-      // check if auto-grading script exists
-      // else, throw an error in the parse attempt
-      fetch(autoGradrURL)
+    specId = event.data.spec;
+    const autoGradrURL = `${window.location.origin}/engines/${specId}.js`;
+
+    // check if auto-grading script exists
+    // else, throw an error in the parse attempt
+    fetch(autoGradrURL)
       .then(response => response.text())
       .then(code => {
         esprima.parseScript(code);
 
         // install auto-grading script
         const script = document.createElement('script');
+        script.onload = resolve;
         document.body.appendChild(script);
         script.src = `${autoGradrURL}`;
-        resolve();
       })
       .catch(error => {
         reject(new Error(noAutoGradrErrorMsg));
       });
-    }
-    resolve();
   });
 
 const playCode = event => {
@@ -107,7 +104,7 @@ const playCode = event => {
   if (event.source !== parentWindow) return;
 
   const { styles, script, markup } = event.data.payload;
-  installAssessment(event)
+  installAutoGrader(event)
     .then(() => executeMarkup(markup))
     .then(() => executeStyle(styles))
     .then(() => executeScript(script))
