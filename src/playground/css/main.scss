@@ -353,8 +353,12 @@ body[data-nav='playground'] #launcher-svg-container.km-chat-icon-sidebox img {
 body[data-nav='playground'] .mdc-snackbar.mdc-snackbar--open,
 body[data-nav='playground'] .mdc-snackbar.mdc-snackbar--closing {
   position: fixed;
-  top: 0;
+  top: -5px;
   left: 0;
   right: 0;
   bottom: auto;
+}
+
+body[data-nav='playground'] .mdc-snackbar.mdc-snackbar--open .mdc-snackbar__label {
+  font-size: 110%;
 }
