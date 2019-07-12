@@ -133,10 +133,7 @@ const bootstrapAssessment = async user => {
     return;
   }
 
-  if(!assessmentIsLive(assessmentDoc)) {
-    notify(invalidURLMsg);
-    return;
-  }
+  if(!assessmentIsLive(assessmentDoc)) return;
 
   await enterPlayground(assessmentDoc);
 };
