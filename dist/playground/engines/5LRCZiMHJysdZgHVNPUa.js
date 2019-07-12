@@ -699,6 +699,21 @@ const challengeThree = {
       const { script } = payload;
       const haltWithFeedback = deferAuditHaltWith(reject);
 
+      const usesOnlySelectorAPI = async ({ast, astq}) => {
+        try {
+          const query = `
+            // CallExpression /:callee MemberExpression [
+                /:property Identifier [@name == 'getElementById'] ||
+                /:property Identifier [@name == 'getElementsByName'] ||
+                /:property Identifier [@name == 'getElementsByTagName']
+            ]
+          `;
+
+          const [node] = astq.query(ast, query);
+          return node === undefined;
+        } catch (queryError) {}
+      };
+
       const flagIfInvalidFn = createAudit(queryNamedArrowFnHasParams, {
         name: 'flagIfInvalid', params: ['field', 'isValid']
       });
@@ -789,6 +804,14 @@ const challengeThree = {
         )
       );
 
+      tests.push(
+        audit(usesOnlySelectorAPI).and(
+          haltWithFeedback(
+            `You seem to be using at least one form of the "getElement...." DOM APIs. You are required to only use the DOM Selector API`
+          )
+        )
+      );
+
       const testSuite = chain(...tests);
       await auditJavascript(script, testSuite);
 
@@ -799,10 +822,63 @@ const challengeThree = {
   stepTwo (payload) {
     return new Promise(async (resolve, reject) => {
       const { script } = payload;
-      // const haltWithFeedback = deferAuditHaltWith(reject);
-      const haltWithFeedback = haltAuditWith(reject);
+      const haltWithFeedback = deferAuditHaltWith(reject);
 
-      haltWithFeedback('Keep implementing your solution following the instructions. Complete auto-grading for Challenge-3 & 4 is shipping later tomorrow');
+      const uiCanInteractHasEventListeners = createAudit(
+        queryNamedArrowFnAddsEventsListener,
+        {
+          name: 'uiCanInteract',
+          events: [
+            { type: 'blur', handler: 'detectCardType' },
+            { type: 'blur', handler: 'validateCardHolderName' },
+            { type: 'blur', handler: 'validateCardExpiryDate' },
+            { type: 'click', handler: 'validateCardNumber' }
+          ]
+        }
+      );
+
+      const uiCanInteractAssignsFocus = async ({ast, astq}) => {
+        try {
+          const query = `
+            //VariableDeclaration [
+              @kind == 'const' &&
+                /:declarations VariableDeclarator [
+                  /:id Identifier [@name == 'uiCanInteract'] 
+                  && /:init ArrowFunctionExpression [
+                      /:body BlockStatement [
+                        // CallExpression [
+                          /:callee MemberExpression /:property Identifier [@name == 'focus'] 
+                        ]
+                    ]
+                ]
+              ]
+            ]
+          `;
+
+          const [node] = astq.query(ast, query);
+          return node !== undefined;
+        } catch (queryError) {}
+      };
+
+      const tests = [];
+      tests.push(
+        audit(uiCanInteractHasEventListeners).and(
+          haltWithFeedback(
+            `As specified, you need to setup event listeners for certain UI elements in the 'uiCanInteract' function. See instructions for more details`
+          )
+        )
+      );
+
+      tests.push(
+        audit(uiCanInteractAssignsFocus).and(
+          haltWithFeedback(
+            `Your 'uiCanInteract' function needs to give focus to a certain input field. See instructions for more details`
+          )
+        )
+      );
+
+      const testSuite = chain(...tests);
+      await auditJavascript(script, testSuite);
 
       resolve(payload);
     });
@@ -811,10 +887,92 @@ const challengeThree = {
   stepThree (payload) {
     return new Promise(async (resolve, reject) => {
       const { script } = payload;
-      // const haltWithFeedback = deferAuditHaltWith(reject);
-      const haltWithFeedback = haltAuditWith(reject);
+      const haltWithFeedback = deferAuditHaltWith(reject);
 
-      haltWithFeedback('Keep implementing your solution following the instructions. Complete auto-grading for Challenge-3 & 4 is shipping later tomorrow');
+      const validateCardNumberFn = createAudit(queryArrowFunction, {
+        name: 'validateCardNumber'
+      });
+
+      const detectsCardTypeAndSetsImage = async ({ast, astq}) => {
+        try {
+          const query = `
+            //VariableDeclaration [
+              @kind == 'const' &&
+                /:declarations VariableDeclarator [
+                  /:id Identifier [@name == 'detectCardType'] 
+                  && /:init ArrowFunctionExpression [
+                      /:body BlockStatement [
+                        // AssignmentExpression 
+                          /:left MemberExpression 
+                          /:property Identifier [@name == 'src']
+                      ]
+                 ]
+              ]
+            ]
+          `;
+
+          const [node] = astq.query(ast, query);
+          if(node !== undefined) {
+            const logo = select('[data-card-type]');
+            const defaultLogo = logo.src;
+            const input = select('[data-cc-digits] input:nth-child(1)');
+            const cards = {
+              'is-visa': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAABkCAYAAAD32uk+AAAACXBIWXMAAAsTAAALEwEAmpwYAABO',
+              'is-mastercard': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKoAAABkCAYAAAAWlKtGAAABfGlDQ1BJQ0MgUHJvZmlsZQAAKJGlkL9LQlEUx79qYZThkENDw4OkITTMltpSBykcxAyyWt67Pn+APi'
+            };
+
+            const cardCmp = select('[data-credit-card]');
+            let cardCmpCls;
+            if(cardCmp.classList.contains('is-visa')) cardCmpCls = 'is-visa';
+            if(cardCmp.classList.contains('is-mastercard')) cardCmpCls = 'is-mastercard';
+
+            const checkCard = (cardType, firstFourDigits) => {
+              let value = trim(input.value);
+              const tempValue = value;
+              if(!value || value === '') input.value = `${firstFourDigits}`;
+
+              const type = detectCardType({target: input});
+              const logoSrc = logo.src;
+
+              input.value = tempValue;
+              logo.src = defaultLogo;
+
+              return cardType === type && logoSrc.startsWith(cards[type]) ;
+            };
+
+            const forVisa = checkCard('is-visa', 4357);
+            const forMstCard = checkCard('is-mastercard', 5217);
+            
+            if(cardCmpCls) {
+              cardCmp.classList.remove('is-visa', 'is-mastercard');
+            }
+
+            return  forVisa && forMstCard;
+          }
+
+          return false;
+        } catch (queryError) {}
+      };
+
+      const tests = [];
+      tests.push(
+        audit(detectsCardTypeAndSetsImage).and(
+          haltWithFeedback(
+            `Your "detectCardType" function does not seem like a smart detective yet. It can't detect the card type and display the appropriate card type logo !?`
+          )
+        )
+      );
+
+      tests.push(
+        audit(validateCardNumberFn).and(
+          haltWithFeedback(
+            `You need to create a "validateCardNumber". See instructions`
+          )
+        )
+      );
+
+      const testSuite = chain(...tests);
+      await auditJavascript(script, testSuite);
 
       resolve(payload);
     });
@@ -829,7 +987,7 @@ const challengeFour = {
       // const haltWithFeedback = deferAuditHaltWith(reject);
       const haltWithFeedback = haltAuditWith(reject);
 
-      haltWithFeedback('Keep implementing your solution following the instructions. Complete auto-grading for Challenge-3 & 4 is shipping later tomorrow');
+      haltWithFeedback('Keep implementing your solution following the instructions. Complete auto-grading for Challenge 4 is shipping on Friday 13th July');
 
       resolve(payload);
     });
