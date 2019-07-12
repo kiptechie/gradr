@@ -29,13 +29,14 @@ const GARelay = {
 
   tryResend () {
     if (!navigator.onLine || this.blocked) return;
-    const gaCache = this.getCache();
+
     const self = this;
+    const gaCache = this.getCache();
     for (let i = 0; i < gaCache.length; i += 1) {
       const req = gaCache.pop();
       self.ga(...req.args);
 
-      if (this.NUM_SENT_PER_BATCH - 1 == i) {
+      if (this.NUM_SENT_PER_BATCH - 1 === i) {
         this.setCache(gaCache);
         self.blocked = true;
         this.setResendInterval();
@@ -46,7 +47,6 @@ const GARelay = {
       }
     }
     this.setCache([]);
-    // succesfull resend
     this.clearResendInterval();
   },
 
@@ -54,7 +54,7 @@ const GARelay = {
     if (this.resendInterval) return;
     const self = this;
     this.resendInterval = setInterval(() => {
-      self.tryResend(); // will clear interval itself
+      self.tryResend(); 
     }, this.RETRY_INTERVAL);
   },
 
@@ -76,8 +76,8 @@ const GARelay = {
   setCache (val) {
     try {
       localStorage.setItem('gaCache', JSON.stringify(val));
-    } catch (err) {
-      console.warn(err);
+    } catch (error) {
+      console.warn(error.message);
     }
   }
 };

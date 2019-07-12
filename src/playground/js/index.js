@@ -40,13 +40,13 @@ const signIn = () => {
     .signInWithPopup(provider)
     .catch(error => {
       const { code, message } = error;
-      if (code && code.indexOf('account-exists-with-different-credential')) {
+      if (code && code.indexOf('account-exists-with-different-credential') !== -1) {
         notify(
           'An account already exists with the same email address but different sign-in credentials. Make sure you are using the intended Github account'
         );
       }
 
-      if (code && code.indexOf('network-request-failed')) {
+      if (code && code.indexOf('network-request-failed') !== -1) {
         notify('Potential network error. Please refresh and try again!');
       }
 
@@ -80,8 +80,8 @@ const fetchImpliedAssessment = () => {
   return firebase
     .firestore()
     .collection('assessments')
-    .doc(assessmentId)
-    .get();
+    .get()
+    .then(snapshot => snapshot.docs.find(doc => doc.id === assessmentId));
 };
 
 const assessmentIsLive = assessmentDoc => {
@@ -127,15 +127,17 @@ const bootstrapAssessment = async user => {
     });
   }
 
-  if (
-    assessmentDoc &&
-    assessmentDoc.exists &&
-    assessmentIsLive(assessmentDoc)
-  ) {
-    await enterPlayground(assessmentDoc);
-  } else {
-    notify(invalidURLMsg);
+  if(!assessmentDoc || !assessmentDoc.exists) {
+    notify('Unable to load your assessment, please retry.');
+    return;
   }
+
+  if(!assessmentIsLive(assessmentDoc)) {
+    notify(invalidURLMsg);
+    return;
+  }
+
+  await enterPlayground(assessmentDoc);
 };
 
 const setupAuthentication = () => {
