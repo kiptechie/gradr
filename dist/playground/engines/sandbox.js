@@ -76,7 +76,7 @@ const runAudits = payload => {
 
 const installAutoGrader = event =>
   new Promise((resolve, reject) => {
-    if (specId) resolve();
+    if (specId) return resolve();
 
     specId = event.data.spec;
     const autoGradrURL = `${window.location.origin}/engines/${specId}.js`;
