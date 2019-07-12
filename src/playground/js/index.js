@@ -42,18 +42,19 @@ const signIn = () => {
       const { code, message } = error;
       if (code && code.indexOf('account-exists-with-different-credential') !== -1) {
         notify(
-          'An account already exists with the same email address but different sign-in credentials. Make sure you are using the intended Github account'
+          'Make sure you are using the intended Github account. An account already exists with the same email address but different sign-in credentials.'
         );
-      }
-
-      if (code && code.indexOf('network-request-failed') !== -1) {
+      }else if (code && code.indexOf('network-request-failed') !== -1) {
         notify('Potential network error. Please refresh and try again!');
+      } else {
+        notify(`${message}`);
       }
 
       GARelay.ga('send', {
         hitType: 'event',
         nonInteraction: true,
-        eventAction: `${message}`,
+        eventAction: `${code}`,
+        eventLabel: `${message}`,
         eventCategory: 'Playground'
       });
     });
