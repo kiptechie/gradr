@@ -932,12 +932,14 @@ const challengeThree = {
               if(!value || value === '') input.value = `${firstFourDigits}`;
 
               const type = detectCardType({target: input});
-              const logoSrc = logo.src;
+              const logoSrc = select('[data-card-type]').src;
 
               input.value = tempValue;
               logo.src = defaultLogo;
 
-              return cardType === type && logoSrc.startsWith(cards[type]) ;
+              return cardType === type && 
+                logoSrc.startsWith(cards[type]) && 
+                select('[data-credit-card]').classList.contains(type);
             };
 
             const forVisa = checkCard('is-visa', 4357);
@@ -947,7 +949,7 @@ const challengeThree = {
               cardCmp.classList.remove('is-visa', 'is-mastercard');
             }
 
-            return  forVisa && forMstCard;
+            return forVisa && forMstCard;
           }
 
           return false;
@@ -987,7 +989,7 @@ const challengeFour = {
       // const haltWithFeedback = deferAuditHaltWith(reject);
       const haltWithFeedback = haltAuditWith(reject);
 
-      haltWithFeedback('Keep implementing your solution following the instructions. Complete auto-grading for Challenge 4 is shipping on Friday 13th July');
+      haltWithFeedback('Keep implementing your solution following the instructions. Complete auto-grading for Challenge 4 is shipping on Saturday 13th July');
 
       resolve(payload);
     });
