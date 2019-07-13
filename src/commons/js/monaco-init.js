@@ -1,4 +1,3 @@
-
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js';
 import language from './monaco-lang';
 
@@ -47,6 +46,7 @@ const monacoCreate = (MonacoConfig = {}, doc) => monaco.editor.create(doc, {
   readOnly: false,
   showUnused: true,
   wordWrap: "on",
+  selectionClipboard: false,
   ...MonacoConfig
 });
 

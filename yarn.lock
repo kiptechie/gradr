@@ -3007,6 +3007,11 @@ mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.1:
   dependencies:
     minimist "0.0.8"
 
+mo@^1.7.3:
+  version "1.7.3"
+  resolved "https://registry.yarnpkg.com/mo/-/mo-1.7.3.tgz#39e49ffe649e5e62014f979210678d3bae0f3606"
+  integrity sha1-OeSf/mSeXmIBT5eSEGeNO64PNgY=
+
 moment@^2.10.2:
   version "2.24.0"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"

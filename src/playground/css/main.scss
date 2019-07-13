@@ -168,6 +168,11 @@ body[data-assessment] header.mdc-top-app-bar--short-collapsed button {
   min-height: 100%;
 }
 
+// hide cut/paste and command palate from the context menu options
+li.action-item:nth-child(n + 6) {
+  display: none !important;
+}
+
 .mdc-icon-button img {
   position: fixed;
   width: 50px;

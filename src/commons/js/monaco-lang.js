@@ -26,4 +26,4 @@ export default {
   yaml: 'yaml',
   css: 'css',
   scss: 'scss'
-}
+};
