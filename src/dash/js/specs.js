@@ -196,9 +196,7 @@ const saveStarter = () => {
   }
 };
 
-const renderStarter = () => {
-
-};
+const renderStarter = () => { };
 
 const renderInstructions = () => {
   const instructions = spec.challenges.reduce((all, { guide }) => `${all} \n\n ${guide}`, '');
@@ -289,17 +287,13 @@ const buildUI = mode => {
   });
 
   // setup monaco for challenge instructions
-  monacoCreate({ language: language.markdown }, select("#challenge-instructions"));
+  instructionsEditor = monacoCreate({ language: language.markdown }, select("#challenge-instructions"));
 
   // setup monaco for challenge instructions
-  monacoCreate({ language: language.javascript }, select("#challenge-starter"));
+  starterEditor = monacoCreate({ language: language.javascript }, select("#challenge-starter"));
 
   builtUI = true;
 };
-
-
-
-
 
 const adminWillCreateSpec = () => {
   buildUI({ mode: "create" });
