@@ -69,9 +69,11 @@ const on = nodeOrSelector => {
   const results = [];
   const tellMe = () => results.includes(true);
 
-  const ifThe = (prop, transform, check) => {
+  const ifThe = (prop, transform, check, {debug} = {}) => {
     const actual = transform(css(nodeOrSelector, prop));
-    // console.log(`${prop} on ${nodeOrSelector} => ${actual} : ${check(actual)}`);
+    if(debug === true) {
+      console.log(`${prop} on ${nodeOrSelector} => ${actual} : ${check(actual)}`);
+    }
     results.push(check(actual));
     return box(ifThe, tellMe);
   };

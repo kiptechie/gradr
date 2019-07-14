@@ -72,6 +72,15 @@ header a svg {
   padding: 0.5em;
 }
 
+header.mdc-top-app-bar--fixed [data-action] {
+  padding: 0.5em;
+  cursor: pointer;
+}
+
+header.mdc-top-app-bar--fixed [data-action]:hover path.shape {
+  fill: #f1f1f1;
+}
+
 /* Specs */
 [data-view=create-edit-spec] {
   width: 95%;
@@ -85,6 +94,11 @@ header a svg {
 
 [data-view=create-edit-spec] .details-wrap p {
   margin: 0;
+}
+
+[data-view=create-edit-spec] .mdc-typography--headline5 .mdc-icon-button {
+  margin-top: -0.3em;
+  margin-right: 0.3em;
 }
 
 #specabout-field {
@@ -210,6 +224,14 @@ body[data-nav=assessments] .mdc-card.text-only:hover {
   max-height: 575px;
   overflow: hidden;
   margin-bottom: 1.5em;
+}
+
+[data-assessment-admin] .mdc-select:not(.mdc-select--disabled) {
+  background-color: #fff;
+}
+
+[data-assessment-admin] input.email-search-input {
+  background: #fff url('../images/baseline-search-24px.svg') center right no-repeat;
 }
 
 [data-assessment-admin] button[data-export] {

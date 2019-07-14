@@ -1,4 +1,5 @@
-import firebase from 'firebase/app';
+import * as firebase from "firebase/app";
+
 import marked from 'marked';
 
 import {
@@ -19,6 +20,7 @@ let spec;
 let toast;
 let device;
 let editor;
+let GARelay;
 let appUser;
 let testId;
 let projectId;
@@ -56,16 +58,25 @@ const notify = (msg) => {
 const signOut = event => {
   event.preventDefault();
   firebase.auth().signOut();
+
+  GARelay.ga('send', {
+    hitType: 'event',
+    eventCategory: 'Playground',
+    eventAction: 'signout',
+    eventLabel: `${assessment.slug}`
+  });
 };
 
 const setupAccount = () => {
-  if (appUser.photoURL) {
+  const userIconBtn = select('button[data-profile]');
+  if(appUser.photoURL) {
     const img = document.createElement("img");
     img.src = appUser.photoURL;
-    const src = document.getElementById("photo");
-    src.appendChild(img);
+    userIconBtn.appendChild(img);
+
+    userIconBtn.classList.add('has-usr-photo');
   }
-  const userIconBtn = select('button[data-profile]');
+  
   const usrMenu = mdc.menu.MDCMenu.attachTo(select('.mdc-menu'));
   userIconBtn.addEventListener('click', event => {
     event.preventDefault();
@@ -330,18 +341,26 @@ const initProject = async () => {
   const challengeIndex = 0;
   const started = Date.now();
 
-  await updateProjectWork({ started, challengeIndex });
-  assessmentProgress = { challengeIndex, completedChallenge: -1 };
-  select('body').setAttribute('data-assessment', started);
-
-  progressTo(challengeIndex);
   let aName = [''];
   if (appUser && appUser.displayName) {
     aName = appUser.displayName.split(/\s+/);
   }
+
+  await updateProjectWork({ started, challengeIndex, displayName:aName.join(' ') });
+  assessmentProgress = {challengeIndex, completedChallenge: -1};
+  select('body').setAttribute('data-assessment', started);
+  
+  progressTo(challengeIndex);
   notify(`Yo, you can now begin the assessment. Take it away ${aName[0]}!`);
   rAF({ wait: 500 }).then(() => {
     select('body').classList.remove('mdc-dialog-scroll-lock', 'mdc-dialog--open');
+  });
+
+  GARelay.ga('send', {
+    hitType: 'event',
+    eventCategory: 'Playground',
+    eventAction: 'assessment-started',
+    eventLabel: `${assessment.slug}`
   });
 };
 
@@ -353,8 +372,16 @@ const challengeIntro = async () => {
     if (appUser && appUser.displayName) {
       aName = appUser.displayName.split(/\s+/);
     }
+
     notify(`Thats right ${aName[0]}! Please wait while we start things off for you ...`);
     initProject();
+    
+    GARelay.ga('send', {
+      hitType: 'event',
+      eventCategory: 'Playground',
+      eventAction: 'begin-assessment',
+      eventLabel: `${assessment.slug}`
+    });
   });
 
   // await getAssessmentSpec();
@@ -389,10 +416,18 @@ const handleChallengeNavClicks = (event) => {
   event.preventDefault();
 
   const target = event.target.closest('button');
-  const isActive = target.getAttribute('data-challange-status') === 'active'
-  const isPassing = target.getAttribute('data-challange-audit') === 'passing'
+  const isActive = target.getAttribute('data-challange-status') === 'active';
+  const isPassing = target.getAttribute('data-challange-audit') === 'passing';
+  const navState = isActive || isPassing;
 
-  if (isActive || isPassing) {
+  GARelay.ga('send', {
+    hitType: 'event',
+    eventCategory: 'Playground',
+    eventAction: 'challenge-nav',
+    eventLabel: `${assessment.slug}`
+  });
+  
+  if(navState) {
     const step = target.getAttribute('data-challange-step') || 0;
     navigateToChallengeInstructions(parseInt(step, 10));
     switchPreviewToInstructions();
@@ -409,6 +444,13 @@ const setTheStage = async (challengeIndex, started) => {
   select('#runit').addEventListener('click', (event) => {
     event.preventDefault();
     playCode();
+
+    GARelay.ga('send', {
+      hitType: 'event',
+      eventCategory: 'Playground',
+      eventAction: 'play-code-btn',
+      eventLabel: `${assessment.slug}`
+    });
   });
 
   Array.from(selectAll(`button[data-challange-step]`)).forEach(btn => {
@@ -421,8 +463,20 @@ const setTheStage = async (challengeIndex, started) => {
   toggleViewer.listen('MDCIconButtonToggle:change', ({ detail }) => {
     if (detail.isOn === true) {
       switchPreviewToEmulator();
+      GARelay.ga('send', {
+        hitType: 'event',
+        eventCategory: 'Playground',
+        eventAction: 'toggle-to-emulator',
+        eventLabel: `${assessment.slug}`
+      });
     } else {
       switchPreviewToInstructions();
+      GARelay.ga('send', {
+        hitType: 'event',
+        eventCategory: 'Playground',
+        eventAction: 'toggle-to-instructions',
+        eventLabel: `${assessment.slug}`
+      });
     }
   });
 
@@ -464,11 +518,12 @@ const saveWorkBatched = async () => {
   assessmentProgress = { ...assessmentProgress, ...performance };
 };
 
-const saveWork = ({ completedChallenge, challengeIndex }) => {
-  if (batchedProgress.length === 0) {
-    setTimeout(() => {
+const saveWork = ({completedChallenge, challengeIndex}) => {
+  if(batchedProgress.length === 0) {
+    rAF({wait: 5000})
+    .then(() => {
       saveWorkBatched();
-    }, 5000);
+    });
   }
 
   if (savingBatchedProgress === true) return;
@@ -516,6 +571,13 @@ const handleSpecialKeyCombinations = () => {
 
     if (event.ctrlKey && key === 13) {
       playCode();
+
+      GARelay.ga('send', {
+        hitType: 'event',
+        eventCategory: 'Playground',
+        eventAction: 'play-code-keys',
+        eventLabel: `${assessment.slug}`
+      });
     }
   });
 };
@@ -581,6 +643,11 @@ const deferredEnter = async (args) => {
   };
 
   goTo('playground', { test });
+
+  import('../../commons/js/GARelay.js')
+  .then(module => {
+    GARelay = module.default;
+  });
 
   await getAssessmentSpec();
   const project = await createOrUpdateProject();

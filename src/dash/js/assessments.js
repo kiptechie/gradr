@@ -35,6 +35,42 @@ const testsListEl = select('#tests-list');
 const saveTestBtn = select(`[data-action='save-test']`);
 const extractTestIDBtn = select(`[data-action='extract-test-id']`);
 
+const specsListItemTPL = specs => html`
+  ${specs.map(
+    item => html`
+      <option value=${item.id} data-key=${item.id}> ${item.name} </option>
+    `
+  )}
+`;
+
+const perfGroupItemTPL = groups => html`
+  ${groups.map(
+    item => html`
+      <option value=${item.value}> ${item.text} </option>
+    `
+  )}
+`;
+
+const candidateListTPL = pool => html`
+  ${pool.map(
+    item => html`
+      <tr>
+        <td>${item.email}</td>
+        <td class="align-center">
+          ${item.completedChallenge >= 0
+            ? `Challenge ${item.completedChallenge + 1}`
+            : 'Not A Single Challenge'}
+        </td>
+        <td>
+          ${item.completedChallenge >= 0
+            ? formatDate(item.lastRun)
+            : 'Not Applicable'}
+        </td>
+      </tr>
+    `
+  )}
+`;
+
 const getAssessmentPublicKey = () =>
   assessment.id
     .split('')
@@ -44,16 +80,17 @@ const getAssessmentPublicKey = () =>
 /**
  * @description this checks whether an assessment is ongoing or not
  * and sets the value of the global variable called "candidatesStatus"
- * 
+ *
  * @param { object } theAssessment
  */
-const droppedOutOrCompletedNone = (theAssessment) => {
+const droppedOutOrCompletedNone = theAssessment => {
   if (theAssessment && theAssessment.endingAt) {
-    const secondsToGo = Date.parse(theAssessment.endingAt) - Date.parse(new Date());
-    candidatesStatus = secondsToGo < 0 ? "Dropped Out" : "Completed NONE";
+    const secondsToGo =
+      Date.parse(theAssessment.endingAt) - Date.parse(new Date());
+    candidatesStatus = secondsToGo < 0 ? 'Dropped Out' : 'Completed NONE';
   }
 };
-    
+
 const setAssessmentObject = (obj = {}) => {
   droppedOutOrCompletedNone(obj);
   assessment = obj;
@@ -162,16 +199,19 @@ const clearInputValues = () => {
 };
 
 const searchByEmail = () => {
-  const email_input = select('.email-search-input')
+  const emailInput = select('.email-search-input');
   const candidateTable = select('[data-candidate-pool]');
-  email_input.addEventListener('keyup', ()=>{
-    let available_users = [];
-     candidates.forEach(candidate => {
-      if(candidate.email.indexOf(email_input.value.toLowerCase()) > -1){
-            available_users.push(candidate);
-            render(candidateListTPL(available_users), candidateTable);
-          }
-        })
+
+  const handleSearchQuery = () => {
+    const input = trim(emailInput.value).toLowerCase();
+    const matches = candidates.filter(
+      ({ email }) => email && email.indexOf(input) !== -1
+    );
+    render(candidateListTPL(matches), candidateTable);
+  };
+
+  emailInput.addEventListener('keyup', () => {
+    rAF().then(() => handleSearchQuery());
   });
 };
 
@@ -256,59 +296,23 @@ const formatDate = datetime => {
   return timeFormat.format(diff, 'hours');
 };
 
-const specsListItemTPL = specs => html`
-  ${specs.map(
-    item => html`
-      <option value=${item.id} data-key=${item.id}> ${item.name} </option>
-    `
-  )}
-`;
-
-const perfGroupItemTPL = groups => html`
-  ${groups.map(
-    item => html`
-      <option value=${item.value}> ${item.text} </option>
-    `
-  )}
-`;
-
-const candidateListTPL = pool => html`
-  ${pool.map(
-    item => html`
-      <tr>
-        <td>${item.email}</td>
-        <td class="align-center">
-          ${item.completedChallenge >= 0
-            ? `Challenge ${item.completedChallenge + 1}`
-            : 'Not A Single Challenge'}
-        </td>
-        <td>
-          ${item.completedChallenge >= 0
-            ? formatDate(item.lastRun)
-            : 'Not Applicable'}
-        </td>
-      </tr>
-    `
-  )}
-`;
-
 const getChartDataTPL = () => ({
-    labels: [
-      'Completed Challenge 4',
-      'Completed Challenge 3',
-      'Completed Challenge 2',
-      'Completed Challenge 1',
-      candidatesStatus,
-      'Didn\'t Start'
-    ],
-    datasets: [
-      {
-        label: '',
-        data: [],
-        borderWidth: 1
-      }
-    ]
-  });
+  labels: [
+    'Completed Challenge 4',
+    'Completed Challenge 3',
+    'Completed Challenge 2',
+    'Completed Challenge 1',
+    candidatesStatus,
+    "Didn't Start"
+  ],
+  datasets: [
+    {
+      label: '',
+      data: [],
+      borderWidth: 1
+    }
+  ]
+});
 
 const initChart = () => {
   const countCandidates = theChart => {
@@ -406,7 +410,9 @@ const computePerformanceMatrix = () => {
               if (
                 started &&
                 (completedChallenge === undefined || completedChallenge === -1)
-              ) { sink[1].push(d); }
+              ) {
+                sink[1].push(d);
+              }
 
               return sink;
             },
@@ -430,7 +436,8 @@ const computePerformanceMatrix = () => {
       { value: 'all', text: 'All Entries' },
       { value: 'allstars', text: 'Completed Top 2 Challenges' },
       ...perfGroups.reverse(),
-      { value: 'bailers', text: 'Bailers' }
+      { value: 'dropped', text: `Started But Dropped Out` },
+      { value: 'bailers', text: `Didn't Even Start` }
     ];
 
     render(perfGroupItemTPL(allPerfGroups), perfSelector);
@@ -439,7 +446,8 @@ const computePerformanceMatrix = () => {
 };
 
 const findCandidatesByPerf = perf => {
-  if (!perf || perf === 'all') return candidates.slice();
+  const data = candidates.slice();
+  if (!perf || perf === 'all') return data;
 
   const spec = specifications.find(s => s.id === assessment.spec);
 
@@ -449,18 +457,22 @@ const findCandidatesByPerf = perf => {
       (x, i) => i
     );
     const [last, penultimate] = challenges.reverse();
-    return candidates
-      .slice()
-      .filter(e => [last, penultimate].includes(e.completedChallenge));
+    return data.filter(e => [last, penultimate].includes(e.completedChallenge));
   }
 
   if (perf === 'bailers') {
-    return candidates.slice().filter(e => !e.started);
+    return data.filter(e => !e.started);
   }
 
-  return candidates
-    .slice()
-    .filter(e => e.completedChallenge === parseInt(perf, 10));
+  if (perf === 'dropped') {
+    return data.filter(
+      e =>
+        e.started &&
+        (e.completedChallenge === undefined || e.completedChallenge === -1)
+    );
+  }
+
+  return data.filter(e => e.completedChallenge === parseInt(perf, 10));
 };
 
 const filterCandidatesByPerf = value => {
@@ -480,7 +492,10 @@ const handleExport = () => {
       let performance = '';
       if (!started) {
         performance = `Didn't Start`;
-      } else if (started && completedChallenge === undefined) {
+      } else if (
+        started &&
+        (completedChallenge === undefined || completedChallenge === -1)
+      ) {
         performance = `Dropped Out`;
       } else if (started && completedChallenge >= 0) {
         performance = `${completedChallenge + 1}`;
@@ -522,8 +537,8 @@ const attemptDisplayAssessmentAdminUI = () => {
 
 const buildUI = ({ mode }) => {
   const hasEntries = select('[data-test-hasentries]');
-  if(hasEntries) hasEntries.removeAttribute('data-test-hasentries');
-  
+  if (hasEntries) hasEntries.removeAttribute('data-test-hasentries');
+
   if (builtUI === true) return;
 
   const viewTitle = select(`[data-view='create-edit-test'] [data-view-title]`);
@@ -553,7 +568,7 @@ const buildUI = ({ mode }) => {
   });
 
   select(`button[data-export]`).addEventListener('click', handleExport);
-  
+
   mode == 'manage' ? searchByEmail() : null;
 
   saveTestBtn.addEventListener('click', () => {
@@ -633,7 +648,7 @@ const adminWillCreateTest = () => {
   clearInputValues();
 
   goTo('create-edit-test', {}, '!#create-edit-test');
-  if(monitoringCanSaveTest === true) return;
+  if (monitoringCanSaveTest === true) return;
 
   rAF().then(() => canSaveTest());
 };
@@ -685,8 +700,8 @@ const manageATest = event => {
     });
 
   goTo('create-edit-test', { id }, '!#create-edit-test');
-  if(monitoringCanSaveTest === true) return;
-  
+  if (monitoringCanSaveTest === true) return;
+
   rAF().then(() => canSaveTest());
 };
 
@@ -710,7 +725,6 @@ const testsListItemTPL = specs => html`
     `
   )}
 `;
-
 
 export const adminWillViewTests = () => {
   ASSESSMENTS.get()

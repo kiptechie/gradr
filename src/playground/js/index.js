@@ -1,4 +1,4 @@
-import firebase from 'firebase/app';
+import * as firebase from 'firebase/app';
 
 import {
   trim,
@@ -10,12 +10,14 @@ import {
 } from '../../commons/js/utils.js';
 
 import {
+  importGARelay,
   importPlayground,
   importFirebaseInitializer
 } from './module-manager.js';
 
 let toast;
 let testId;
+let GARelay;
 let appUser;
 let provider;
 let uiIsBuilt = false;
@@ -38,19 +40,23 @@ const signIn = () => {
     .signInWithPopup(provider)
     .catch(error => {
       const { code, message } = error;
-      if(code && code.indexOf('account-exists-with-different-credential')) {
-        notify('An account already exists with the same email address but different sign-in credentials. Make sure you are using the intended Github account');
-        return;
-      }
-
-      if(code && code.indexOf('network-request-failed')) {
+      if (code && code.indexOf('account-exists-with-different-credential') !== -1) {
         notify(
-          'Potential network error. Please refresh and try again!'
+          'Make sure you are using the intended Github account. An account already exists with the same email address but different sign-in credentials.'
         );
-        return;
+      }else if (code && code.indexOf('network-request-failed') !== -1) {
+        notify('Potential network error. Please refresh and try again!');
+      } else {
+        notify(`${message}`);
       }
 
-      console.warn(`${code} => ${message}`);
+      GARelay.ga('send', {
+        hitType: 'event',
+        nonInteraction: true,
+        eventAction: `${code}`,
+        eventLabel: `${message}`,
+        eventCategory: 'Playground'
+      });
     });
 };
 
@@ -75,11 +81,11 @@ const fetchImpliedAssessment = () => {
   return firebase
     .firestore()
     .collection('assessments')
-    .doc(assessmentId)
-    .get();
+    .get()
+    .then(snapshot => snapshot.docs.find(doc => doc.id === assessmentId));
 };
 
-const assessmentIsLive = (assessmentDoc) => {
+const assessmentIsLive = assessmentDoc => {
   const { startingAt } = assessmentDoc.data();
   if (isAfterKickoffTime({ startingAt })) return true;
 
@@ -90,33 +96,46 @@ const assessmentIsLive = (assessmentDoc) => {
   return false;
 };
 
-const enterPlayground = async (assessmentDoc) => {
+const enterPlayground = async assessmentDoc => {
   notify('Busy, loading playground resources  ...');
 
   const playground = await importPlayground();
-  playground.enter({ user: appUser, test: testId, assessmentDoc});
+  playground.enter({ user: appUser, test: testId, assessmentDoc });
 };
 
-const enterHome = (testId) => {
-  // select('body').removeAttribute('data-auth');
+const enterHome = testId => {
   goTo('home', { test: testId });
 };
 
 const initServiceBot = () => loadStylesAndScripts('/engines/service-bot.js');
 
-const bootstrapAssessment = async (user) => {
+const bootstrapAssessment = async user => {
   appUser = user;
+  let assessmentDoc;
 
-  const assessmentDoc = await fetchImpliedAssessment();
+  try {
+    assessmentDoc = await fetchImpliedAssessment();
+  } catch (error) {
+    notify('Unable to load your assessment, please retry.');
+    console.warn(error.message);
+
+    GARelay.ga('send', {
+      hitType: 'event',
+      nonInteraction: true,
+      eventCategory: 'Playground',
+      eventLabel: `${error.message}`,
+      eventAction: 'fetch-implied-assessment'
+    });
+  }
+
   if(!assessmentDoc || !assessmentDoc.exists) {
-    notify(invalidURLMsg);
+    notify('Unable to load your assessment, please retry.');
     return;
   }
 
-  if(assessmentIsLive(assessmentDoc)) {
-    await enterPlayground(assessmentDoc);
-    // initServiceBot();
-  }
+  if(!assessmentIsLive(assessmentDoc)) return;
+
+  await enterPlayground(assessmentDoc);
 };
 
 const setupAuthentication = () => {
@@ -130,17 +149,29 @@ const setupAuthentication = () => {
     if (!user) {
       enterHome(testId);
       setupSignIn();
+
+      GARelay.ga('send', {
+        hitType: 'event',
+        nonInteraction: true,
+        eventCategory: 'Playground',
+        eventAction: 'setup-signin'
+      });
+
       return;
     }
-  
+
     goTo('intro', { test: testId });
     bootstrapAssessment(user);
+    GARelay.ga('set', 'userId', `${user.email}`);
   });
 };
 
 const takeOff = async () => {
-  handleWindowPopState();
+  importGARelay().then(module => {
+    GARelay = module.default;
+  });
 
+  handleWindowPopState();
   toast = mdc.snackbar.MDCSnackbar.attachTo(select('#intro-toast'));
   const { pathname } = window.location;
 
@@ -162,9 +193,11 @@ const takeOff = async () => {
 
     notify('Busy. Loading Critical Assets. Please Wait ...');
     const fb = await importFirebaseInitializer();
-    
+
     notify('Busy, please wait ...');
     await fb.init();
+
+    GARelay.tryResend();
     setupAuthentication();
   }
 };
