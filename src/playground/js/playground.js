@@ -602,10 +602,10 @@ const proceed = async (project) => {
   editor = codeEditor;
   editor.setValue(code);
 
-  editor.on("beforeChange", (_, change) => {
-    if (change.origin === 'paste') change.cancel();
-  });
-  editor.refresh();
+  // editor.on("beforeChange", (_, change) => {
+  //   if (change.origin === 'paste') change.cancel();
+  // });
+  // editor.refresh();
 
   instructions = select('#instructions');
   rAF({ wait: 500 }).then(() => showCountdown());

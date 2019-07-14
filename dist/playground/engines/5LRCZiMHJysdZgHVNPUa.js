@@ -124,7 +124,7 @@ const challengeOne = {
       }
 
       const btn = select('[data-pay-btn].mdc-button');
-      if (!btn || trim(btn.textContent) !== 'Pay & Checkout Now') {
+      if (!btn || (trim(btn.textContent) !== 'Pay & Checkout Now' && trim(btn.textContent) !== 'Pay &amp; Checkout Now')) {
         haltWithFeedback(
           `As specified, create a BUTTON with a "data-pay-btn" attribute and the required content. See instructions`
         );
@@ -595,7 +595,7 @@ const challengeTwo = {
                      //AssignmentExpression [
                         /:left MemberExpression [
                           /:object Identifier [@name == 'appState']
-                          && /:property Identifier [@name == 'billFormated']
+                          && /:property Identifier [@name == 'billFormatted']
                         ]
                         && /:right CallExpression /:callee Identifier [@name == 'formatAsMoney']
                       ] &&
@@ -606,7 +606,7 @@ const challengeTwo = {
                         ]
                         && /:right MemberExpression [
                         /:object Identifier [@name == 'appState'] &&
-                          /:property Identifier [@name == 'billFormated']
+                          /:property Identifier [@name == 'billFormatted']
                         ]
                       ] &&
                       // CallExpression /:callee Identifier [@name == 'uiCanInteract']
@@ -679,7 +679,7 @@ const challengeTwo = {
       tests.push(
         audit(calculatesBillWithReduce).and(
           haltWithFeedback(
-            `In "displayCartTotal", given the iteams the user bought, you are to derive the total bill with the ".reduce" function and assign it to "appState.bill". See instructions`
+            `In "displayCartTotal", given the items the user bought, you are to derive the total bill with the ".reduce" function and assign it to "appState.bill". See instructions`
           )
         )
       );
@@ -914,28 +914,27 @@ const challengeThree = {
           const [node] = astq.query(ast, query);
           if(node !== undefined) {
             const logo = select('[data-card-type]');
-            const defaultLogo = logo.src;
+            const currentSrc = logo.src;
+
             const input = select('[data-cc-digits] input:nth-child(1)');
+            const currentValue = input.value;
+
             const cards = {
               'is-visa': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAABkCAYAAAD32uk+AAAACXBIWXMAAAsTAAALEwEAmpwYAABO',
               'is-mastercard': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKoAAABkCAYAAAAWlKtGAAABfGlDQ1BJQ0MgUHJvZmlsZQAAKJGlkL9LQlEUx79qYZThkENDw4OkITTMltpSBykcxAyyWt67Pn+APi'
             };
 
+            let cardCmpCls = '';
             const cardCmp = select('[data-credit-card]');
-            let cardCmpCls;
             if(cardCmp.classList.contains('is-visa')) cardCmpCls = 'is-visa';
             if(cardCmp.classList.contains('is-mastercard')) cardCmpCls = 'is-mastercard';
 
             const checkCard = (cardType, firstFourDigits) => {
-              let value = trim(input.value);
-              const tempValue = value;
-              if(!value || value === '') input.value = `${firstFourDigits}`;
+              input.value = `${firstFourDigits}`;
+              input.setAttribute('value', `${firstFourDigits}`);
 
               const type = detectCardType({target: input});
               const logoSrc = select('[data-card-type]').src;
-
-              input.value = tempValue;
-              logo.src = defaultLogo;
 
               return cardType === type && 
                 logoSrc.startsWith(cards[type]) && 
@@ -945,9 +944,11 @@ const challengeThree = {
             const forVisa = checkCard('is-visa', 4357);
             const forMstCard = checkCard('is-mastercard', 5217);
             
-            if(cardCmpCls) {
-              cardCmp.classList.remove('is-visa', 'is-mastercard');
-            }
+            input.value = currentValue;
+            input.setAttribute('value', currentValue);
+            logo.src = currentSrc;
+            cardCmp.classList.remove('is-visa', 'is-mastercard');
+            if(cardCmpCls !== '') cardCmp.classList.add(cardCmpCls);
 
             return forVisa && forMstCard;
           }
@@ -960,7 +961,7 @@ const challengeThree = {
       tests.push(
         audit(detectsCardTypeAndSetsImage).and(
           haltWithFeedback(
-            `Your "detectCardType" function does not seem like a smart detective yet. It can't detect the card type and display the appropriate card type logo !?`
+            `"detectCardType" is failing at its detective job! It can't correctly detect the card type and display the appropriate card logo?`
           )
         )
       );
@@ -986,12 +987,310 @@ const challengeFour = {
   stepOne (payload) {
     return new Promise(async (resolve, reject) => {
       const { script } = payload;
-      // const haltWithFeedback = deferAuditHaltWith(reject);
-      const haltWithFeedback = haltAuditWith(reject);
+      const haltWithFeedback = deferAuditHaltWith(reject);
 
-      haltWithFeedback('Keep implementing your solution following the instructions. Complete auto-grading for Challenge 4 is shipping on Saturday 13th July');
+      const validateWithLuhnFn = createAudit(queryArrowFunction, {
+        name: 'validateWithLuhn'
+      });
+
+      const checkLuhnImplementation = () => {
+        const validCCs = [
+          '4556372551434601',
+          '4916337563926287',
+          '4716361721613449',
+          '4539818898404311',
+          '4929416075118388',
+          '5130752529459529',
+          '5250457226640843',
+          '5330664490375584',
+          '5241343263959571',
+          '5250445524664938'
+        ];
+
+        const invalidCCs = [
+          '45563725554346010',
+          '4916339563926287',
+          '471636172421613449',
+          '45398198404311',
+          '4929416775118388',
+          '5130752829459529',
+          '5250457526640843',
+          '3330664490375584',
+          '7241343263959571',
+          '62504455246654938'
+        ];
+
+        const bulkCheck = ccs => {
+          return ccs.map(cc => {
+            const digits = `${cc}`.split('').map(digit => parseInt(digit, 10));
+            return validateWithLuhn(digits);
+          });
+        };
+
+        return bulkCheck(validCCs).every(check => check === true) 
+          && bulkCheck(invalidCCs).every(check => check === false)
+      };
+
+      const tests = [];
+      tests.push(
+        audit(validateWithLuhnFn).and(
+          haltWithFeedback(
+            `You need to create a "validateWithLuhn" function that will check if the credit card numbers are valid. See instructions.`
+          )
+        )
+      );
+
+      tests.push(
+        audit(checkLuhnImplementation).and(
+          haltWithFeedback(
+            `Your "validateWithLuhn" function is not correctly validating card numbers as specified. See instructions.`
+          )
+        )
+      );
+
+      const testSuite = chain(...tests);
+      await auditJavascript(script, testSuite);
 
       resolve(payload);
+    });
+  },
+
+  stepTwo (payload) {
+    return new Promise(async (resolve, reject) => {
+      const {script} = payload;
+      const haltWithFeedback = deferAuditHaltWith(reject);
+
+      const validateCardNumberFn = async ({ast, astq}) => {
+        try {
+          const query = `
+            //VariableDeclaration [
+              @kind == 'const' &&
+                /:declarations VariableDeclarator [
+                  /:id Identifier [@name == 'validateCardNumber'] 
+                  && /:init ArrowFunctionExpression [
+                      /:body BlockStatement [
+                        // CallExpression [
+                          /:callee Identifier [@name == 'validateWithLuhn']
+                          && /:arguments Identifier
+                        ]
+                      ]
+                ]
+              ]
+            ]
+          `;
+
+          const [node] = astq.query(ast, query);
+          return node !== undefined;
+        } catch (queryError) {}
+      };
+
+      const checkValidateCardNumberFn = async () => {
+        const validCCs = [
+          '4556372551434601',
+          '4916337563926287',
+          '4716361721613449',
+          '4539818898404311',
+          '4929416075118388',
+          '5130752529459529',
+          '5250457226640843',
+          '5330664490375584',
+          '5241343263959571',
+          '5250445524664938'
+        ];
+
+        const invalidCCs = [
+          '45563725554346010',
+          '4916339563926287',
+          '471636172421613449',
+          '45398198404311',
+          '4929416775118388',
+          '5130752829459529',
+          '5250457526640843',
+          '3330664490375584',
+          '7241343263959571',
+          '62504455246654938'
+        ];
+
+        const bulkCheck = ccs => {
+          return ccs.map(cc => {
+            const numbers = `${cc}`.split('').map(digit => parseInt(digit, 10));
+            const defaults = [];
+            const fields = [...selectAll('[data-cc-digits] input')];
+
+            let fieldCursor = 0;
+            for(let i = 0; i < 15; i += 4) {
+              defaults.push(fields[fieldCursor].value);
+
+              const value = numbers.join('').substr(i, 4);
+              fields[fieldCursor].value = value;
+              fields[fieldCursor].setAttribute('value', value);
+              fieldCursor += 1;
+            }
+
+            const div = select('[data-cc-digits]');
+            const hasCls = div.classList.contains('is-invalid');
+            div.classList.remove('is-invalid');
+
+            const isValid = validateCardNumber();
+            const hasIsInvalidCls = select('[data-cc-digits]').classList.contains('is-invalid');
+
+            fields.forEach((f, i) => {
+              f.value = defaults[i];
+              f.setAttribute('value', defaults[i]);
+            });
+
+            if(hasCls) div.classList.add('is-invalid');
+
+            return {isValid, hasIsInvalidCls};
+          });
+        };
+
+        return bulkCheck(validCCs).every(({isValid, hasIsInvalidCls}) => isValid === true && hasIsInvalidCls === false ) 
+          && bulkCheck(invalidCCs).every(({isValid, hasIsInvalidCls}) => isValid === false && hasIsInvalidCls === true)
+      };
+
+      const tests = [];
+      tests.push(
+        audit(validateCardNumberFn).and(
+          haltWithFeedback(
+            `Make sure your "validateCardNumber" function is using the "validateWithLuhn" function to do its job. See instructions.`
+          )
+        )
+      );
+
+      tests.push(
+        audit(checkValidateCardNumberFn).and(
+          haltWithFeedback(
+            `Your "validateCardNumber" function is not correctly indicating valid or invalid card numbers. See instructions.`
+          )
+        )
+      );
+
+      const testSuite = chain(...tests);
+      await auditJavascript(script, testSuite);
+
+      resolve(payload);
+    });
+  },
+
+  stepThree (payload) {
+    return new Promise(async (resolve, reject) => {
+      const haltWithFeedback = haltAuditWith(reject);
+
+      const calculateBill = ([data]) => {
+        const {itemsInCart} = data;
+        return itemsInCart.reduce((total, { price, qty }) => {
+          return total + (price * qty);
+        }, 0);
+      };
+
+      const formatBill = (amount, buyerCountry) => {
+        const country =
+          countries.find(c => c.country === buyerCountry) || countries[0];
+        return amount.toLocaleString(`en-${country.code}`, {
+          style: "currency",
+          currency: country.currency
+        });
+      };
+
+      const checkCardExpiryDate = () => {
+        const checkDate = ({date, validity}) => {
+          let field = select('[data-cc-info] input:nth-child(2)');
+          const value = field.value;
+
+          field.value = date;
+          field.setAttribute('value', date);
+          const isValid = validateCardExpiryDate({target: field});
+
+          field = select('[data-cc-info] input:nth-child(2)');
+          field.value = value;
+          field.setAttribute('value', value);
+
+          return validity === false ? (isValid === validity && field.classList.contains('is-invalid')) : (isValid === validity);
+        };
+
+        return checkDate({date: '10/20', validity: true})
+          && checkDate({date: '10/18', validity: false})
+          && checkDate({date: '1/10/2019', validity: false})
+          && checkDate({date: '10/1/2020', validity: false})
+      };
+
+      const checkCardHolderName = () => {
+        const checkName = ({name, validity}) => {
+          let field = select('[data-cc-info] input:nth-child(1)');
+          const value = field.value;
+
+          field.value = name;
+          field.setAttribute('value', name);
+          const isValid = validateCardHolderName({target: field});
+
+          field = select('[data-cc-info] input:nth-child(1)');
+          field.value = value;
+          field.setAttribute('value', value);
+
+          return validity === false ? (isValid === validity && field.classList.contains('is-invalid')) : (isValid === validity);
+        };
+
+        return checkName({name: 'Odili Charles', validity: true})
+          && checkName({name: 'Odili', validity: false})
+          && checkName({name: 'Odili Charles Opute', validity: false})
+      };
+
+      const checkAppState = ({results}) => {
+        if(appState.bill !== calculateBill(results)) {
+          haltWithFeedback(`You are not currectly calculating the user's total bill. See instructions and review your code`);
+        }
+
+        if(appState.billFormatted !== formatBill(appState.bill, appState.country)) {
+          haltWithFeedback(`You are not currectly formatting the user's total bill. See instructions and review your code`);
+        }
+
+        if(!checkCardHolderName()) {
+          haltWithFeedback(`You are not correctly validating the card holder's name and marking incorrect entries as invalid?`);
+        }
+
+        if(!checkCardExpiryDate()) {
+          haltWithFeedback(`You are not correctly validating the card's expiry date and marking incorrect entries as invalid?`);
+        }
+      };
+
+      if(navigator.serviceWorker && navigator.serviceWorker.controller) {
+        const callReturned = async ({data}) => {
+          const {type, apiResponse} = data;
+          if('api-returned' === type && apiResponse) {
+            setTimeout(() => {
+              checkAppState(apiResponse);
+              resolve(payload);
+            }, 500);
+          }
+        };
+
+        navigator.serviceWorker.addEventListener('message', callReturned, {
+          once: true
+        });
+      } else {
+        console.warn('No SW, manually checking API response handling ...');
+        setTimeout(() => {
+          const response = {
+            results: [{
+              buyerCountry: 'Nigeria',
+              itemsInCart: [{
+                name: 'Matooke',
+                price: 136,
+                qty: 1
+              }, {
+                name: 'Nyama Choma',
+                price: 135,
+                qty: 3
+              }]
+            }]
+          };
+          displayCartTotal(response);
+          checkAppState(response);
+          resolve(payload);
+        }, 2000);
+      }
+
     });
   }
 };

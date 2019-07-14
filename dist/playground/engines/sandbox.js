@@ -110,6 +110,14 @@ const installAutoGrader = event =>
         script.onload = resolve;
         document.body.appendChild(script);
         script.src = `${autoGradrURL}`;
+
+        // setup gradr as a client to the SW
+        if(navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'ping'
+          });
+        }
+
       })
       .catch(error => {
         reject(new Error(noAutoGradrErrorMsg));
