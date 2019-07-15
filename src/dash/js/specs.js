@@ -439,11 +439,11 @@ const specsListItemTPL = specs => {
       item => html`
         <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-2">
           <div
-            class="mdc-card text-only"
+            class="mdc-card text-only spec-card"
             data-key=${item.id}
             @click=${manageASpec}
           >
-            <div class="mdc-card__primary-action" tabindex="0">
+            <div class="mdc-card__primary-action spec-card" tabindex="0">
               <h2 class="mdc-typography--headline6">${item.name}</h2>
               <div class="mdc-typography--body2">${item.about}</div>
             </div>
