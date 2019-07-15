@@ -68,7 +68,7 @@ const challengeOne = {
       if (
         !img ||
         !img.src ||
-        !img.src.startsWith('http://placehold.it/120x60')
+        img.src.indexOf('placehold.it/120x60') === -1
       ) {
         haltWithFeedback(
           `You need to create the IMAGE element with the specified attributes`
