@@ -199,6 +199,11 @@ const takeOff = async () => {
 
     GARelay.tryResend();
     setupAuthentication();
+
+    if(navigator.serviceWorker) {
+      const swName = `/sw.js`;
+      navigator.serviceWorker.register(swName);
+    }
   }
 };
 

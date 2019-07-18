@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "scripts": {
     "lint": "eslint src -c src/.eslintrc.json",
-    "develop-playground": "yarn monaco-build && parcel src/playground/index.html --out-dir dev-build",
-    "develop-admin": "parcel src/dash/index.html --out-dir dev-build",
-    "build-playground": "parcel build src/playground/index.html --out-dir dist/playground",
-    "build-admin": "parcel build src/dash/index.html --out-dir dist/admin",
+    "develop-playground": "yarn monaco-dev-build && parcel src/playground/index.html --out-dir dev-build",
+    "develop-admin": "yarn monaco-dev-build && parcel src/dash/index.html --out-dir dev-build",
+    "build-playground": "yarn monaco-playground-build && parcel build src/playground/index.html --out-dir dist/playground",
+    "build-admin": "yarn monaco-admin-build && parcel build src/dash/index.html --out-dir dist/admin",
     "deploy-admin": "firebase deploy --only hosting:admin",
     "deploy-playground": "firebase deploy --only hosting:playground",
-    "monaco-build": "parcel build node_modules/monaco-editor/esm/vs/language/**/*.worker.js node_modules/monaco-editor/esm/vs/editor/**/*.worker.js --out-dir dev-build --no-source-maps"
+    "monaco-dev-build": "parcel build node_modules/monaco-editor/esm/vs/language/**/*.worker.js node_modules/monaco-editor/esm/vs/editor/**/*.worker.js --out-dir dev-build --no-source-maps",
+    "monaco-playground-build": "parcel build node_modules/monaco-editor/esm/vs/language/**/*.worker.js node_modules/monaco-editor/esm/vs/editor/**/*.worker.js --out-dir dist/playground --no-source-maps",
+    "monaco-admin-build": "parcel build node_modules/monaco-editor/esm/vs/language/**/*.worker.js node_modules/monaco-editor/esm/vs/editor/**/*.worker.js --out-dir dist/admin --no-source-maps"
   },
   "keywords": [],
   "author": "",

@@ -7,11 +7,22 @@ const relay = data => {
 };
 
 const executeScript = code =>
-  new Promise(resolve => {
-    let ast = esprima.parseScript(code);
-    let gradrInstrumentation = program => program;
+  new Promise((resolve, reject) => {
+    let ast;
+    try {
+      ast = esprima.parseScript(code);
+    } catch (error) {
+      reject(Error('Awwww Snaaap :( your javascript code has one or more syntax errors ...'));
+    }
 
-    ast = gradrInstrumentation(ast);
+    if(!ast) return;
+
+    if('undefined' !== typeof gradrInstrumentation) {
+      // TODO rename this to 
+      // gradrCodemod
+      ast = gradrInstrumentation(ast);
+    }
+    
     for (let node of ast.body) {
       if (node.type === 'VariableDeclaration') {
         node.kind = 'var';
@@ -32,8 +43,14 @@ const executeScript = code =>
   });
 
 const executeStyle = code =>
-  new Promise(resolve => {
+  new Promise((resolve, reject) => {
     const styles = document.head.querySelector('#styles');
+
+    csstree.parse(code, {
+      onParseError: (error) => {
+        reject(Error('Awwww Snaaap :( your CSS code has one or more syntax errors ...'));
+      }
+    });
 
     styles.textContent = code;
     resolve();
@@ -93,6 +110,14 @@ const installAutoGrader = event =>
         script.onload = resolve;
         document.body.appendChild(script);
         script.src = `${autoGradrURL}`;
+
+        // setup gradr as a client to the SW
+        if(navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'ping'
+          });
+        }
+
       })
       .catch(error => {
         reject(new Error(noAutoGradrErrorMsg));
@@ -108,7 +133,12 @@ const playCode = event => {
     .then(() => executeMarkup(markup))
     .then(() => executeStyle(styles))
     .then(() => executeScript(script))
-    .then(() => runAudits({ styles, markup, script }));
+    .then(() => runAudits({ styles, markup, script }))
+    .catch(({message}) => {
+      relay({
+        feedback: { message }
+      });
+    });
 };
 
 window.addEventListener('message', playCode);

@@ -8,6 +8,7 @@
         "mdc": "readonly",
         "gtag": "readonly",
         "ga": "readonly",
+        "self": "readonly",
         "CodeMirror": "readonly",
         "Atomics": "readonly",
         "SharedArrayBuffer": "readonly"

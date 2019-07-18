@@ -154,6 +154,12 @@ body[data-nav=specs] .mdc-card.text-only .mdc-card__primary-action {
 .width-class {
   max-width: 65%;
 }
+
+[data-action=clone-spec] {
+  margin-top: -6px;
+  margin-right: 10px;
+}
+
 /* End Specs */
 
 /* Assesstemts */
