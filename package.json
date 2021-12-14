@@ -28,7 +28,7 @@
   "dependencies": {
     "@babel/runtime": "^7.4.4",
     "@emmetio/codemirror-plugin": "^0.5.4",
-    "astq": "^2.6.1",
+    "astq": "^2.7.2",
     "chart.js": "^2.8.0",
     "chartjs-plugin-colorschemes": "^0.3.0",
     "chartjs-plugin-datalabels": "^0.6.0",
