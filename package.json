@@ -39,6 +39,6 @@
     "g": "^2.0.1",
     "intl-relative-time-format": "^1.0.6",
     "lit-html": "^1.0.0",
-    "marked": "^0.6.2"
+    "marked": "^4.0.10"
   }
 }
