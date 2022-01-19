@@ -34,7 +34,7 @@
     "chartjs-plugin-datalabels": "^0.6.0",
     "chartjs-plugin-doughnutlabel": "^2.0.3",
     "codemirror": "^5.42.2",
-    "firebase": "^6.2.4",
+    "firebase": "^7.22.0",
     "first-input-delay": "^0.1.3",
     "g": "^2.0.1",
     "intl-relative-time-format": "^1.0.6",
